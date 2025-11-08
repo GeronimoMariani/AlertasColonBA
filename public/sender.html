@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enviar Siniestro - Cuartel</title>
+<style>
+body { font-family: Arial, sans-serif; background: #111; color: #fff; padding: 20px; }
+h2 { color: #f33; }
+input, select, textarea, button { width: 100%; margin: 10px 0; padding: 10px; border-radius: 5px; border: none; }
+button { background: #f33; color: white; font-size: 1.2em; cursor: pointer; }
+button:hover { background: #d22; }
+</style>
+</head>
+<body>
+<h2>🚨 Enviar siniestro</h2>
+<form id="form">
+  <label>Tipo:</label>
+  <select name="tipo">
+    <option>Incendio</option>
+    <option>Accidente</option>
+    <option>Rescate</option>
+    <option>Emergencia Médica</option>
+  </select>
+
+  <label>Prioridad:</label>
+  <select name="prioridad">
+    <option>Alta</option>
+    <option>Media</option>
+    <option>Baja</option>
+  </select>
+
+  <label>Dirección:</label>
+  <input name="direccion" required>
+
+  <label>Detalle:</label>
+  <textarea name="detalle" rows="4"></textarea>
+
+  <button type="submit">Enviar</button>
+</form>
+
+<pre id="result"></pre>
+
+<script>
+const API_URL = window.location.origin + '/api/send';
+const TOKEN = prompt('Ingrese token de envío:', 'cuartel123');
+
+document.getElementById('form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const data = Object.fromEntries(fd.entries());
+  data.id = 'siniestro-' + Date.now();
+  data.hora = new Date().toISOString();
+
+  const res = await fetch(API_URL + '?token=' + encodeURIComponent(TOKEN), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+
+  const json = await res.json();
+  document.getElementById('result').textContent = JSON.stringify(json, null, 2);
+});
+</script>
+</body>
+</html>

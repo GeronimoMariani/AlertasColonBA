@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visor Cuartel</title>
+<style>
+html, body { margin:0; padding:0; height:100%; background:#000; color:#fff; font-family:Arial; text-align:center; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+#tipo { font-size:8vh; font-weight:bold; margin-bottom:20px; }
+#direccion { font-size:5vh; }
+#detalle { font-size:3vh; margin-top:2vh; max-width:80%; }
+#banner { position:fixed; top:0; width:100%; background:#f33; padding:10px; font-weight:bold; }
+</style>
+</head>
+<body>
+<div id="banner">Esperando siniestros...</div>
+<div id="tipo"></div>
+<div id="direccion"></div>
+<div id="detalle"></div>
+<audio id="alarm" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg"></audio>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+const socket = io();
+const tipo = document.getElementById('tipo');
+const dir = document.getElementById('direccion');
+const det = document.getElementById('detalle');
+const banner = document.getElementById('banner');
+const alarm = document.getElementById('alarm');
+
+socket.on('connect', () => banner.textContent = 'Conectado al servidor');
+socket.on('disconnect', () => banner.textContent = 'Desconectado');
+
+socket.on('siniestro', msg => {
+  tipo.textContent = msg.tipo.toUpperCase();
+  dir.textContent = msg.direccion || '';
+  det.textContent = msg.detalle || '';
+  banner.textContent = 'PRIORIDAD: ' + (msg.prioridad || 'Media').toUpperCase();
+  if ((msg.prioridad || '').toLowerCase() === 'alta') alarm.play();
+});
+</script>
+</body>
+</html>
