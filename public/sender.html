@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -26,7 +26,7 @@
     }
 
     img {
-      width: 120px;
+      width: 130px;
       margin-bottom: 15px;
     }
 
@@ -34,14 +34,14 @@
       display: flex;
       flex-direction: column;
       width: 90%;
-      max-width: 400px;
+      max-width: 450px;
       gap: 15px;
     }
 
     select, input, textarea, button {
-      font-size: 1rem;
-      padding: 10px;
-      border-radius: 8px;
+      font-size: 1.1rem;
+      padding: 12px;
+      border-radius: 10px;
       border: 1px solid #ccc;
     }
 
@@ -50,7 +50,8 @@
       color: white;
       border: none;
       cursor: pointer;
-      font-size: 1.1rem;
+      font-size: 1.2rem;
+      padding: 12px;
     }
 
     button:hover {
@@ -81,15 +82,15 @@
     <form id="alertForm">
       <label>Tipo de siniestro:</label>
       <select id="tipo" required>
-        <option value="Incendio">Incendio</option>
-        <option value="Forestal">Forestal</option>
-        <option value="Accidente">Accidente</option>
-        <option value="Rescate">Rescate</option>
-        <option value="Materiales Peligrosos">Materiales Peligrosos</option>
+        <option value="Incendio">🔥 Incendio</option>
+        <option value="Forestal">🌲 Forestal</option>
+        <option value="Accidente">🚗 Accidente</option>
+        <option value="Rescate">🧑‍🚒 Rescate</option>
+        <option value="Materiales Peligrosos">☣️ Materiales Peligrosos</option>
       </select>
 
       <label>Dirección:</label>
-      <input type="text" id="direccion" placeholder="Ej: Calle 25 y 52" required />
+      <input type="text" id="direccion" placeholder="Ej: Calle 25 y Moreno" required />
 
       <label>Descripción:</label>
       <textarea id="descripcion" rows="3" placeholder="Detalles del siniestro"></textarea>
@@ -102,16 +103,14 @@
       </select>
 
       <label>Contacto:</label>
-      <input type="text" id="contacto" placeholder="Nombre y telefono de la victima" />
+      <input type="text" id="contacto" placeholder="Ej: Interno 23 o Teléfono" />
 
       <button type="submit">🚨 Enviar Alerta</button>
     </form>
   </div>
 
   <script>
-    // Conexión directa al servidor Render
-    const socket = io("https://alertascolonba.onrender.com"); // 🔴 Reemplazar si tu dominio es distinto
-
+    const socket = io("https://alertascolonba.onrender.com");
     const PASSWORD = "bomberosba60";
 
     function checkPassword() {
@@ -150,6 +149,7 @@
   </script>
 </body>
 </html>
+
 
 
 
