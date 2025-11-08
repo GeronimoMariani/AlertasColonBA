@@ -28,6 +28,7 @@ io.on("connection", (socket) => {
       timestamp: new Date().toLocaleTimeString("es-AR", {
         hour: "2-digit",
         minute: "2-digit",
+        timeZone: "America/Argentina/Buenos_Aires"
       }),
     };
 

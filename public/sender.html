@@ -89,7 +89,7 @@
       </select>
 
       <label>Dirección:</label>
-      <input type="text" id="direccion" placeholder="Ej: Calle 25 y Moreno" required />
+      <input type="text" id="direccion" placeholder="Ej: Calle 25 y 52" required />
 
       <label>Descripción:</label>
       <textarea id="descripcion" rows="3" placeholder="Detalles del siniestro"></textarea>
@@ -102,7 +102,7 @@
       </select>
 
       <label>Contacto:</label>
-      <input type="text" id="contacto" placeholder="Ej: Interno 23 o Teléfono" />
+      <input type="text" id="contacto" placeholder="Nombre y telefono de la victima" />
 
       <button type="submit">🚨 Enviar Alerta</button>
     </form>
@@ -138,7 +138,7 @@
       const data = {
         tipo: document.getElementById("tipo").value,
         direccion: document.getElementById("direccion").value,
-        descripcion: document.getElementById("descripcion").value,
+        descripcion: document.getElementById("descripcion").value.toUpperCase(),
         despachadoPor: document.getElementById("despachadoPor").value,
         contacto: document.getElementById("contacto").value,
       };
