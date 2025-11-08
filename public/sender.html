@@ -44,47 +44,82 @@
     button:hover {
       background-color: darkred;
     }
+    #login {
+      text-align: center;
+    }
   </style>
 </head>
 <body>
-  <h1>Enviar Alerta</h1>
-  <form id="alertForm">
-    <label>Tipo de siniestro:</label>
-    <select id="tipo" required>
-      <option value="Incendio">Incendio</option>
-      <option value="Forestal">Forestal</option>
-      <option value="Accidente">Accidente</option>
-      <option value="Rescate">Rescate</option>
-      <option value="Materiales Peligrosos">Materiales Peligrosos</option>
-    </select>
+  <div id="login">
+    <h1>Acceso al sistema</h1>
+    <p>Ingrese la contraseña para acceder al envío de alertas</p>
+    <input type="password" id="passwordInput" placeholder="Contraseña" />
+    <button onclick="checkPassword()">Ingresar</button>
+  </div>
 
-    <label>Despachado por:</label>
-    <select id="despachadoPor" required>
-      <option value="CUARTEL 60">CUARTEL 60</option>
-      <option value="POLICÍA">POLICÍA</option>
-      <option value="GUM">GUM</option>
-    </select>
+  <div id="main" style="display:none;">
+    <h1>Enviar Alerta</h1>
+    <form id="alertForm">
+      <label>Tipo de siniestro:</label>
+      <select id="tipo" required>
+        <option value="Incendio">Incendio</option>
+        <option value="Forestal">Forestal</option>
+        <option value="Accidente">Accidente</option>
+        <option value="Rescate">Rescate</option>
+        <option value="Materiales Peligrosos">Materiales Peligrosos</option>
+      </select>
 
-    <label>Contacto:</label>
-    <input type="text" id="contacto" placeholder="Ej: Interno 23 o Teléfono" />
+      <label>Dirección:</label>
+      <input type="text" id="direccion" placeholder="Ej: Calle 25 y Moreno" required />
 
-    <label>Descripción:</label>
-    <textarea id="descripcion" rows="3" placeholder="Dirección o detalles del siniestro"></textarea>
+      <label>Descripción:</label>
+      <textarea id="descripcion" rows="3" placeholder="Detalles del siniestro"></textarea>
 
-    <button type="submit">🚨 Enviar Alerta</button>
-  </form>
+      <label>Despachado por:</label>
+      <select id="despachadoPor" required>
+        <option value="CUARTEL 60">CUARTEL 60</option>
+        <option value="POLICÍA">POLICÍA</option>
+        <option value="GUM">GUM</option>
+      </select>
+
+      <label>Contacto:</label>
+      <input type="text" id="contacto" placeholder="Ej: Interno 23 o Teléfono" />
+
+      <button type="submit">🚨 Enviar Alerta</button>
+    </form>
+  </div>
 
   <script>
     const socket = io();
+    const PASSWORD = "bomberosba60";
+
+    function checkPassword() {
+      const pass = document.getElementById("passwordInput").value;
+      if (pass === PASSWORD) {
+        sessionStorage.setItem("authenticated", "true");
+        document.getElementById("login").style.display = "none";
+        document.getElementById("main").style.display = "block";
+      } else {
+        alert("Contraseña incorrecta");
+      }
+    }
+
+    window.onload = () => {
+      if (sessionStorage.getItem("authenticated") === "true") {
+        document.getElementById("login").style.display = "none";
+        document.getElementById("main").style.display = "block";
+      }
+    };
 
     document.getElementById("alertForm").addEventListener("submit", (e) => {
       e.preventDefault();
 
       const data = {
         tipo: document.getElementById("tipo").value,
+        direccion: document.getElementById("direccion").value,
+        descripcion: document.getElementById("descripcion").value,
         despachadoPor: document.getElementById("despachadoPor").value,
         contacto: document.getElementById("contacto").value,
-        descripcion: document.getElementById("descripcion").value,
       };
 
       socket.emit("sendAlert", data);
@@ -94,5 +129,6 @@
   </script>
 </body>
 </html>
+
 
 
