@@ -3,116 +3,115 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Visor - Bomberos Voluntarios de Colón</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <title>Alerta - Bomberos Voluntarios de Colón</title>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 0;
-      text-align: center;
-      background-color: #ffffff;
-      color: #000;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: background-color 0.5s ease;
-    }
-    .header {
-      background-color: #c00;
-      padding: 10px;
-    }
-    .header img {
-      height: 100px;
-    }
-    .content {
-      flex-grow: 1;
+      background-color: black;
+      color: white;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      height: 100vh;
+      margin: 0;
+      text-align: center;
+    }
+
+    .alerta {
+      border: 5px solid red;
+      padding: 30px;
+      border-radius: 20px;
+      animation: parpadeo 1s infinite;
+      width: 90%;
+      max-width: 800px;
+    }
+
+    @keyframes parpadeo {
+      0%, 100% { border-color: red; box-shadow: 0 0 25px red; }
+      50% { border-color: darkred; box-shadow: 0 0 5px darkred; }
+    }
+
+    h1 {
+      font-size: 3rem;
+      color: red;
+      margin-bottom: 20px;
+    }
+
+    h2 {
       font-size: 2rem;
-      padding: 20px;
+      margin: 10px 0;
     }
-    .footer {
+
+    p {
       font-size: 1.5rem;
-      margin-bottom: 10px;
+      margin: 10px 0;
     }
-    .blink {
-      animation: blink-bg 1s infinite alternate;
+
+    img {
+      max-width: 200px;
+      margin-bottom: 20px;
     }
-    @keyframes blink-bg {
-      0% { background-color: #ff0000; color: white; }
-      100% { background-color: #b30000; color: white; }
-    }
-    #clock {
-      position: absolute;
-      top: 15px;
-      right: 20px;
-      font-size: 1.5rem;
-      color: white;
+
+    audio {
+      display: none;
     }
   </style>
 </head>
 <body>
-  <div class="header">
-    <img src="logo.png" alt="Logo Bomberos Voluntarios de Colón" />
-    <div id="clock"></div>
-  </div>
-
-  <div class="content" id="alertContent">
+  <div id="alertaContainer">
+    <img src="logo.png" alt="Logo Bomberos Colón" />
+    <h1>Bomberos Voluntarios de Colón</h1>
     <p>Esperando alertas...</p>
   </div>
 
-  <div class="footer">
-    Bomberos Voluntarios de Colón
-  </div>
-
-  <audio id="sirena" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
+  <audio id="sirena" src="https://actions.google.com/sounds/v1/alarms/siren.ogg"></audio>
 
   <script>
     const socket = io();
-    const content = document.getElementById("alertContent");
-    const body = document.body;
+    const contenedor = document.getElementById("alertaContainer");
     const sirena = document.getElementById("sirena");
 
-    socket.on("alert", (data) => {
-      content.innerHTML = `
-        <div>
-          <h1>${data.tipo}</h1>
-          <p>${data.descripcion || ""}</p>
-          <p>Despachado por: <strong>${data.despachadoPor}</strong></p>
-          <p>Contacto: ${data.contacto || "-"}</p>
-          <p>Hora: ${data.timestamp}</p>
+    socket.on("newAlert", (data) => {
+      // reproducir 3 veces
+      let veces = 0;
+      const reproducirSirena = () => {
+        if (veces < 3) {
+          sirena.currentTime = 0;
+          sirena.play().catch(err => console.warn("Reproducción bloqueada:", err));
+          veces++;
+          setTimeout(reproducirSirena, sirena.duration * 1000 || 5000);
+        }
+      };
+      reproducirSirena();
+
+      contenedor.innerHTML = `
+        <div class="alerta">
+          <img src="logo.png" alt="Logo" />
+          <h1>ALERTA DE ${data.tipo.toUpperCase()}</h1>
+          <h2>📍 ${data.direccion}</h2>
+          ${data.descripcion ? `<p>${data.descripcion}</p>` : ""}
+          <p><strong>Despachado por:</strong> ${data.despachadoPor}</p>
+          ${data.contacto ? `<p><strong>Contacto:</strong> ${data.contacto}</p>` : ""}
         </div>
       `;
-      body.classList.add("blink");
 
-      sirena.currentTime = 0;
-      sirena.play().catch(() => {
-        console.log("El navegador bloqueó la reproducción automática del sonido.");
-      });
+      // Borrar alerta a los 30 minutos
+      setTimeout(() => {
+        contenedor.innerHTML = `
+          <img src="logo.png" alt="Logo Bomberos Colón" />
+          <h1>Bomberos Voluntarios de Colón</h1>
+          <p>Esperando alertas...</p>
+        `;
+      }, 30 * 60 * 1000);
     });
-
-    socket.on("clearAlert", () => {
-      content.innerHTML = "<p>Esperando alertas...</p>";
-      body.classList.remove("blink");
-    });
-
-    // Reloj en vivo
-    function updateClock() {
-      const now = new Date();
-      document.getElementById("clock").innerText = now.toLocaleTimeString("es-AR", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      });
-    }
-    setInterval(updateClock, 1000);
-    updateClock();
   </script>
 </body>
 </html>
+
+
 
 
 
