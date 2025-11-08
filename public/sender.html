@@ -8,59 +8,120 @@
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color: #fff;
-      color: #222;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background-color: #ffffff;
+      color: #111;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      height: 100vh;
+      justify-content: flex-start;
+      min-height: 100vh;
       margin: 0;
-      text-align: center;
       padding: 20px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 800px;
+      margin-bottom: 30px;
+    }
+
+    header img {
+      width: 100px;
+    }
+
+    #datetime {
+      text-align: right;
+      font-weight: bold;
+      font-size: 1.1rem;
+      color: #444;
     }
 
     h1 {
       color: red;
-      margin-bottom: 10px;
-    }
-
-    img {
-      width: 120px;
-      margin-bottom: 15px;
+      font-size: 2rem;
+      margin: 0;
+      text-align: center;
+      width: 100%;
     }
 
     form {
       display: flex;
       flex-direction: column;
-      width: 90%;
-      max-width: 400px;
       gap: 15px;
+      width: 100%;
+      max-width: 800px;
     }
 
-    select, input, textarea, button {
-      font-size: 1.1rem;
-      padding: 12px;
+    label {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #333;
+      text-align: left;
+    }
+
+    input, select, textarea, button {
+      font-size: 1.2rem;
+      padding: 14px;
       border-radius: 8px;
       border: 1px solid #ccc;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    textarea {
+      resize: none;
     }
 
     button {
       background-color: red;
       color: white;
+      font-size: 1.4rem;
       border: none;
+      border-radius: 10px;
+      padding: 16px;
       cursor: pointer;
-      font-size: 1.2rem;
       transition: 0.3s;
+      font-weight: bold;
     }
 
-    button:hover {
+    button:hover:not(:disabled) {
       background-color: darkred;
+    }
+
+    button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    #loading {
+      display: none;
+      margin-top: 10px;
+      font-size: 1.2rem;
+      color: #333;
+      font-weight: bold;
+    }
+
+    #loading span {
+      animation: blink 1.2s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
     }
 
     #login {
       text-align: center;
+      margin-top: 80px;
+    }
+
+    #login img {
+      width: 140px;
+      margin-bottom: 20px;
     }
 
     #login input {
@@ -69,6 +130,15 @@
       padding: 10px;
       border-radius: 8px;
       border: 1px solid #ccc;
+    }
+
+    @media (max-width: 600px) {
+      header img {
+        width: 80px;
+      }
+      h1 {
+        font-size: 1.6rem;
+      }
     }
   </style>
 </head>
@@ -82,7 +152,11 @@
   </div>
 
   <div id="main" style="display:none;">
-    <img src="logo.png" alt="Logo Bomberos" />
+    <header>
+      <img src="logo.png" alt="Logo Bomberos" />
+      <div id="datetime"></div>
+    </header>
+
     <h1>Enviar Alerta</h1>
     <form id="alertForm">
       <label>Tipo de siniestro:</label>
@@ -110,7 +184,8 @@
       <label>Contacto:</label>
       <input type="text" id="contacto" placeholder="Ej: Interno 23 o Teléfono" />
 
-      <button type="submit">🚨 Enviar Alerta</button>
+      <button type="submit" id="sendBtn">🚨 ENVIAR ALERTA</button>
+      <div id="loading">📡 Enviando alerta<span>...</span></div>
     </form>
   </div>
 
@@ -134,10 +209,24 @@
         document.getElementById("login").style.display = "none";
         document.getElementById("main").style.display = "block";
       }
+      updateDateTime();
+      setInterval(updateDateTime, 1000);
     };
+
+    function updateDateTime() {
+      const now = new Date();
+      const options = { timeZone: "America/Argentina/Buenos_Aires", hour: "2-digit", minute: "2-digit" };
+      const hora = now.toLocaleTimeString("es-AR", options);
+      const fecha = now.toLocaleDateString("es-AR");
+      document.getElementById("datetime").textContent = `${fecha} — ${hora}`;
+    }
 
     document.getElementById("alertForm").addEventListener("submit", (e) => {
       e.preventDefault();
+      const btn = document.getElementById("sendBtn");
+      const loading = document.getElementById("loading");
+      btn.disabled = true;
+      loading.style.display = "block";
 
       const descripcion = document.getElementById("descripcion").value.toUpperCase();
 
@@ -150,12 +239,19 @@
       };
 
       socket.emit("sendAlert", data);
-      alert("🚨 Alerta enviada correctamente");
-      e.target.reset();
+
+      setTimeout(() => {
+        btn.disabled = false;
+        loading.style.display = "none";
+        alert("✅ Alerta enviada correctamente");
+        e.target.reset();
+      }, 1000);
     });
   </script>
 </body>
 </html>
+
+
 
 
 
