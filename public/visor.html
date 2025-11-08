@@ -19,34 +19,44 @@
       text-align: center;
       margin: 0;
       overflow: hidden;
+      padding: 20px;
     }
 
     img {
-      width: 200px;
-      margin-bottom: 30px;
+      width: 260px;
+      margin-bottom: 40px;
     }
 
     h1 {
-      font-size: 3em;
+      font-size: 4em;
       color: red;
       text-transform: uppercase;
-      margin: 0 0 15px 0;
+      margin: 0 0 20px 0;
       animation: blink 1s infinite;
     }
 
     h2 {
-      font-size: 2em;
-      margin: 10px 0;
+      font-size: 2.6em;
+      margin: 15px 0;
     }
 
     p {
-      font-size: 1.4em;
-      margin: 5px 0;
+      font-size: 2em;
+      margin: 10px 0;
+      line-height: 1.4;
+    }
+
+    strong {
+      color: #ffcc00;
     }
 
     @keyframes blink {
       0%, 50%, 100% { opacity: 1; }
       25%, 75% { opacity: 0; }
+    }
+
+    #alertInfo {
+      max-width: 90%;
     }
   </style>
 </head>
@@ -62,10 +72,10 @@
     <p><strong>Hora:</strong> <span id="hora"></span></p>
   </div>
 
-  <audio id="sirena" src="https://actions.google.com/sounds/v1/emergency/air_raid_siren.ogg"></audio>
+  <audio id="sirena" src="sirena.mp3"></audio>
 
   <script>
-    const socket = io("https://alertascolonba.onrender.com"); // 🔴 Cambiar si tu dominio Render es distinto
+    const socket = io("https://bomberoscolon.onrender.com"); // 🔴 Cambiar si tu dominio Render es distinto
     const sirena = document.getElementById("sirena");
 
     socket.on("alert", (data) => {
@@ -97,6 +107,7 @@
   </script>
 </body>
 </html>
+
 
 
 
