@@ -75,7 +75,7 @@
   <audio id="sirena" src="sirena.mp3"></audio>
 
   <script>
-    const socket = io("https://bomberoscolon.onrender.com"); // 🔴 Cambiar si tu dominio Render es distinto
+    const socket = io("https://alertascolonba.onrender.com"); // 🔴 Cambiar si tu dominio Render es distinto
     const sirena = document.getElementById("sirena");
 
     socket.on("alert", (data) => {
