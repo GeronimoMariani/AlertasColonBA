@@ -1,43 +1,140 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Visor Cuartel</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Visor - Bomberos Voluntarios de Colón</title>
 <style>
-html, body { margin:0; padding:0; height:100%; background:#000; color:#fff; font-family:Arial; text-align:center; display:flex; flex-direction:column; justify-content:center; align-items:center; }
-#tipo { font-size:8vh; font-weight:bold; margin-bottom:20px; }
-#direccion { font-size:5vh; }
-#detalle { font-size:3vh; margin-top:2vh; max-width:80%; }
-#banner { position:fixed; top:0; width:100%; background:#f33; padding:10px; font-weight:bold; }
+  :root{
+    --rojo: #c8102e;
+    --blanco: #ffffff;
+    --negro: #111;
+  }
+  html,body{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--negro);color:var(--blanco)}
+  .wrap{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:12px 20px;box-sizing:border-box}
+  header{width:100%;display:flex;align-items:center;justify-content:center;gap:20px}
+  header img{height:80px;object-fit:contain}
+  header .title{font-size:24px;font-weight:700;color:var(--blanco)}
+  #clock{position:fixed;right:18px;top:12px;font-size:18px;font-weight:700}
+
+  main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%}
+  .tipo{font-size:8vh;font-weight:900;letter-spacing:1px;text-transform:uppercase}
+  .prioridad{margin-top:8px;font-size:2.6vh;font-weight:800}
+  .direccion{margin-top:16px;font-size:3vh;max-width:90%;text-align:center}
+  .hora-despacho{margin-top:10px;font-size:2vh;color:#eee}
+
+  .banner{position:fixed;left:0;right:0;bottom:0;padding:10px;text-align:center;font-weight:700;background:rgba(0,0,0,0.4)}
+
+  /* urgent visual */
+  body.urgent { animation: pulse 1s infinite; }
+  @keyframes pulse {
+    0% { background: var(--rojo); }
+    50% { background: #7a0000; }
+    100% { background: var(--rojo); }
+  }
+
+  /* small responsiveness */
+  @media (max-width:700px){
+    .tipo{font-size:12vw}
+    .direccion{font-size:4vw}
+  }
 </style>
 </head>
 <body>
-<div id="banner">Esperando siniestros...</div>
-<div id="tipo"></div>
-<div id="direccion"></div>
-<div id="detalle"></div>
-<audio id="alarm" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg"></audio>
+  <div class="wrap">
+    <header>
+      <img src="/logo.png" alt="Logo Cuartel" id="logo" />
+      <div class="title">Bomberos Voluntarios de Colón</div>
+    </header>
 
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<script>
-const socket = io();
-const tipo = document.getElementById('tipo');
-const dir = document.getElementById('direccion');
-const det = document.getElementById('detalle');
-const banner = document.getElementById('banner');
-const alarm = document.getElementById('alarm');
+    <div id="clock">--:--:--</div>
 
-socket.on('connect', () => banner.textContent = 'Conectado al servidor');
-socket.on('disconnect', () => banner.textContent = 'Desconectado');
+    <main>
+      <div id="tipo" class="tipo">Esperando siniestros...</div>
+      <div id="prioridad" class="prioridad"></div>
+      <div id="direccion" class="direccion"></div>
+      <div id="hora-despacho" class="hora-despacho"></div>
+    </main>
 
-socket.on('siniestro', msg => {
-  tipo.textContent = msg.tipo.toUpperCase();
-  dir.textContent = msg.direccion || '';
-  det.textContent = msg.detalle || '';
-  banner.textContent = 'PRIORIDAD: ' + (msg.prioridad || 'Media').toUpperCase();
-  if ((msg.prioridad || '').toLowerCase() === 'alta') alarm.play();
-});
-</script>
+    <div class="banner">Conectado y a la espera</div>
+  </div>
+
+  <!-- Sirena temporal online (8s aprox). Si subís tu propio siren.mp3 a public, reemplaza src por "/siren.mp3" -->
+  <audio id="siren" preload="auto" src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_5b4b2a1e37.mp3?filename=siren-ambience-116733.mp3"></audio>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    const tipoEl = document.getElementById('tipo');
+    const prioridadEl = document.getElementById('prioridad');
+    const dirEl = document.getElementById('direccion');
+    const horaDespEl = document.getElementById('hora-despacho');
+    const banner = document.querySelector('.banner');
+    const siren = document.getElementById('siren');
+
+    // Reloj en vivo
+    function updateClock(){
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2,'0');
+      const mm = String(now.getMinutes()).padStart(2,'0');
+      const ss = String(now.getSeconds()).padStart(2,'0');
+      document.getElementById('clock').textContent = `${hh}:${mm}:${ss}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Mostrar mensaje
+    function showAlert(msg){
+      document.body.classList.remove('urgent');
+      tipoEl.textContent = msg.tipo || '';
+      prioridadEl.textContent = msg.prioridad ? `PRIORIDAD: ${msg.prioridad}` : '';
+      dirEl.textContent = msg.direccion || msg.detalle || '';
+      horaDespEl.textContent = msg.receivedAt ? `Despacho: ${new Date(msg.receivedAt).toLocaleString()}` : '';
+
+      banner.textContent = '¡ALERTA RECIBIDA!';
+      if ((msg.prioridad || '').toLowerCase() === 'urgente') {
+        document.body.classList.add('urgent');
+        // Intentar reproducir sirena (puede bloquear el navegador hasta que haya interacción)
+        siren.currentTime = 0;
+        const playPromise = siren.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(e => {
+            // bloqueo de autoplay: mostramos instrucción para habilitar audio
+            banner.textContent = 'Alerta (activar sonido: clic en pantalla)';
+            // al primer clic del usuario, intentamos reproducir
+            const onClickTry = () => { siren.play().catch(()=>{}); window.removeEventListener('click', onClickTry); };
+            window.addEventListener('click', onClickTry);
+          });
+        }
+      }
+    }
+
+    // Limpia el visor
+    function clearAlert(){
+      tipoEl.textContent = 'Esperando siniestros...';
+      prioridadEl.textContent = '';
+      dirEl.textContent = '';
+      horaDespEl.textContent = '';
+      banner.textContent = 'Esperando siniestros...';
+      document.body.classList.remove('urgent');
+    }
+
+    socket.on('connect', () => { banner.textContent = 'Conectado al servidor' });
+    socket.on('disconnect', () => { banner.textContent = 'Desconectado - reintentando...' });
+
+    socket.on('siniestro', msg => {
+      showAlert(msg);
+    });
+
+    socket.on('clear', () => {
+      clearAlert();
+    });
+
+    // Si recibimos un nuevo siniestro, el servidor se encarga de limpiar el anterior
+    // y de programar el clear automático; el visor reacciona con los eventos 'siniestro' y 'clear'.
+
+  </script>
 </body>
 </html>
+

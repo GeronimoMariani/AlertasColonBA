@@ -1,66 +1,94 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Enviar Siniestro - Cuartel</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Enviar Siniestro - Bomberos Voluntarios de Colón</title>
 <style>
-body { font-family: Arial, sans-serif; background: #111; color: #fff; padding: 20px; }
-h2 { color: #f33; }
-input, select, textarea, button { width: 100%; margin: 10px 0; padding: 10px; border-radius: 5px; border: none; }
-button { background: #f33; color: white; font-size: 1.2em; cursor: pointer; }
-button:hover { background: #d22; }
+  body{font-family:Arial,Helvetica,sans-serif;background:#111;color:#fff;padding:18px}
+  h1{color:#c8102e}
+  label{display:block;margin-top:10px;font-weight:700}
+  input,select,textarea,button{width:100%;padding:10px;border-radius:6px;border:0;margin-top:6px;box-sizing:border-box}
+  textarea{min-height:100px}
+  button{background:#c8102e;color:#fff;font-size:18px;margin-top:14px}
+  .result{margin-top:12px;background:#222;padding:10px;border-radius:6px;white-space:pre-wrap}
 </style>
 </head>
 <body>
-<h2>🚨 Enviar siniestro</h2>
-<form id="form">
-  <label>Tipo:</label>
-  <select name="tipo">
-    <option>Incendio</option>
-    <option>Accidente</option>
-    <option>Rescate</option>
-    <option>Emergencia Médica</option>
-  </select>
+  <h1>Enviar Siniestro</h1>
 
-  <label>Prioridad:</label>
-  <select name="prioridad">
-    <option>Alta</option>
-    <option>Media</option>
-    <option>Baja</option>
-  </select>
+  <form id="form">
+    <label>Tipo</label>
+    <select name="tipo" required>
+      <option>Incendio</option>
+      <option>Forestal</option>
+      <option>Accidente</option>
+      <option>Rescate</option>
+      <option>Materiales Peligrosos</option>
+    </select>
 
-  <label>Dirección:</label>
-  <input name="direccion" required>
+    <label>Prioridad</label>
+    <select name="prioridad" required>
+      <option>Urgente</option>
+      <option>Nada</option>
+    </select>
 
-  <label>Detalle:</label>
-  <textarea name="detalle" rows="4"></textarea>
+    <label>Dirección / Observaciones</label>
+    <input name="direccion" placeholder="Calle / Referencia (opcional)">
 
-  <button type="submit">Enviar</button>
-</form>
+    <label>Contacto (opcional)</label>
+    <input name="contacto" placeholder="Teléfono o nombre">
 
-<pre id="result"></pre>
+    <button type="submit">Enviar alerta</button>
+  </form>
 
-<script>
-const API_URL = window.location.origin + '/api/send';
-const TOKEN = prompt('Ingrese token de envío:', 'cuartel123');
+  <div id="result" class="result"></div>
 
-document.getElementById('form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const fd = new FormData(e.target);
-  const data = Object.fromEntries(fd.entries());
-  data.id = 'siniestro-' + Date.now();
-  data.hora = new Date().toISOString();
+  <script>
+    const API_URL = window.location.origin + '/api/send';
+    // Token: se solicita al enviar (para no dejarlo visible en la página)
+    const TOKEN_PROMPT = 'Ingrese token de envío (API_TOKEN)';
 
-  const res = await fetch(API_URL + '?token=' + encodeURIComponent(TOKEN), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
+    document.getElementById('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const fd = new FormData(form);
+      const payload = {
+        id: 'siniestro-' + Date.now(),
+        tipo: fd.get('tipo'),
+        prioridad: fd.get('prioridad'),
+        direccion: fd.get('direccion'),
+        contacto: fd.get('contacto'),
+        receivedAt: new Date().toISOString()
+      };
 
-  const json = await res.json();
-  document.getElementById('result').textContent = JSON.stringify(json, null, 2);
-});
-</script>
+      const token = prompt(TOKEN_PROMPT, '');
+      if (!token) {
+        document.getElementById('result').textContent = 'Envío cancelado: no se ingresó token.';
+        return;
+      }
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-token': token
+          },
+          body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+        if (!res.ok) {
+          document.getElementById('result').textContent = 'Error: ' + (json.error || JSON.stringify(json));
+        } else {
+          document.getElementById('result').textContent = 'Enviado ✔\n' + JSON.stringify(json, null, 2);
+          form.reset();
+        }
+      } catch (err) {
+        document.getElementById('result').textContent = 'Error de red: ' + err.message;
+      }
+    });
+  </script>
 </body>
 </html>
+
