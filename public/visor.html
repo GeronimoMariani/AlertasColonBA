@@ -20,6 +20,19 @@
       align-items: center;
     }
 
+    header {
+      position: absolute;
+      top: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header img {
+      width: 140px;
+      margin-bottom: 10px;
+    }
+
     h1 {
       font-size: 3rem;
       margin-bottom: 10px;
@@ -39,43 +52,50 @@
       padding: 40px;
       border-radius: 20px;
       width: 90%;
-      max-width: 800px;
+      max-width: 900px;
       box-shadow: 0 0 40px red;
+      margin-top: 180px;
     }
 
     .tipo {
-      font-size: 2.5rem;
+      font-size: 2.8rem;
       font-weight: bold;
       text-transform: uppercase;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
     }
 
     .direccion {
-      font-size: 1.8rem;
-      margin-bottom: 15px;
+      font-size: 2rem;
+      margin-bottom: 20px;
       color: #ffcc00;
     }
 
     .descripcion {
-      font-size: 1.4rem;
+      font-size: 1.6rem;
       margin-bottom: 15px;
       white-space: pre-wrap;
+      text-transform: uppercase;
     }
 
     .extra {
-      font-size: 1.2rem;
+      font-size: 1.3rem;
       opacity: 0.9;
     }
 
     #sinAlerta {
       color: #777;
-      font-size: 1.5rem;
+      font-size: 1.7rem;
+      text-align: center;
     }
   </style>
 </head>
 <body>
+  <header>
+    <img src="logo.png" alt="Logo Bomberos" />
+    <p>Bomberos Voluntarios de Colón</p>
+  </header>
+
   <div id="sinAlerta">
-    <img src="logo.png" alt="Logo Bomberos" width="140" style="margin-bottom:20px;">
     <p>🚨 No hay alertas activas</p>
   </div>
 
@@ -98,22 +118,36 @@
     const alertaDiv = document.getElementById("alertaActiva");
     const sinAlerta = document.getElementById("sinAlerta");
     const sirena = document.getElementById("sirena");
+    const tipoEl = document.getElementById("tipo");
+
+    const colores = {
+      "Incendio": "red",
+      "Forestal": "green",
+      "Accidente": "blue",
+      "Rescate": "orange",
+      "Materiales Peligrosos": "purple"
+    };
 
     socket.on("alert", (data) => {
       sinAlerta.style.display = "none";
       alertaDiv.style.display = "block";
 
-      document.getElementById("tipo").textContent = data.tipo;
+      tipoEl.textContent = data.tipo;
       document.getElementById("direccion").textContent = data.direccion;
       document.getElementById("descripcion").textContent = data.descripcion;
       document.getElementById("extra").textContent =
         `Despachado por: ${data.despachadoPor} | Contacto: ${data.contacto || 'N/D'} | Hora: ${new Date().toLocaleTimeString('es-AR', {hour: '2-digit', minute: '2-digit'})}`;
 
+      const color = colores[data.tipo] || "red";
+      document.querySelector(".alerta").style.borderColor = color;
+      document.querySelector(".alerta").style.boxShadow = `0 0 40px ${color}`;
+      document.querySelector("h1").style.color = color;
+
       try {
         sirena.currentTime = 0;
         sirena.play();
       } catch (e) {
-        console.warn("⚠️ El usuario debe interactuar para habilitar el sonido.");
+        console.warn("⚠️ El usuario debe habilitar el sonido manualmente.");
       }
     });
 
@@ -126,6 +160,7 @@
   </script>
 </body>
 </html>
+
 
 
 
