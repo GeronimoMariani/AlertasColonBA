@@ -1,140 +1,118 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Visor - Bomberos Voluntarios de Colón</title>
-<style>
-  :root{
-    --rojo: #c8102e;
-    --blanco: #ffffff;
-    --negro: #111;
-  }
-  html,body{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--negro);color:var(--blanco)}
-  .wrap{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:12px 20px;box-sizing:border-box}
-  header{width:100%;display:flex;align-items:center;justify-content:center;gap:20px}
-  header img{height:80px;object-fit:contain}
-  header .title{font-size:24px;font-weight:700;color:var(--blanco)}
-  #clock{position:fixed;right:18px;top:12px;font-size:18px;font-weight:700}
-
-  main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%}
-  .tipo{font-size:8vh;font-weight:900;letter-spacing:1px;text-transform:uppercase}
-  .prioridad{margin-top:8px;font-size:2.6vh;font-weight:800}
-  .direccion{margin-top:16px;font-size:3vh;max-width:90%;text-align:center}
-  .hora-despacho{margin-top:10px;font-size:2vh;color:#eee}
-
-  .banner{position:fixed;left:0;right:0;bottom:0;padding:10px;text-align:center;font-weight:700;background:rgba(0,0,0,0.4)}
-
-  /* urgent visual */
-  body.urgent { animation: pulse 1s infinite; }
-  @keyframes pulse {
-    0% { background: var(--rojo); }
-    50% { background: #7a0000; }
-    100% { background: var(--rojo); }
-  }
-
-  /* small responsiveness */
-  @media (max-width:700px){
-    .tipo{font-size:12vw}
-    .direccion{font-size:4vw}
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visor - Bomberos Voluntarios de Colón</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      text-align: center;
+      background-color: #ffffff;
+      color: #000;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: background-color 0.5s ease;
+    }
+    .header {
+      background-color: #c00;
+      padding: 10px;
+    }
+    .header img {
+      height: 100px;
+    }
+    .content {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      padding: 20px;
+    }
+    .footer {
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+    }
+    .blink {
+      animation: blink-bg 1s infinite alternate;
+    }
+    @keyframes blink-bg {
+      0% { background-color: #ff0000; color: white; }
+      100% { background-color: #b30000; color: white; }
+    }
+    #clock {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      font-size: 1.5rem;
+      color: white;
+    }
+  </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <img src="/logo.png" alt="Logo Cuartel" id="logo" />
-      <div class="title">Bomberos Voluntarios de Colón</div>
-    </header>
-
-    <div id="clock">--:--:--</div>
-
-    <main>
-      <div id="tipo" class="tipo">Esperando siniestros...</div>
-      <div id="prioridad" class="prioridad"></div>
-      <div id="direccion" class="direccion"></div>
-      <div id="hora-despacho" class="hora-despacho"></div>
-    </main>
-
-    <div class="banner">Conectado y a la espera</div>
+  <div class="header">
+    <img src="LOGO%20BOMBEROS%20COLON%20BA%20SIN%20FONDO.png" alt="Logo Bomberos Voluntarios de Colón" />
+    <div id="clock"></div>
   </div>
 
-  <!-- Sirena temporal online (8s aprox). Si subís tu propio siren.mp3 a public, reemplaza src por "/siren.mp3" -->
-  <audio id="siren" preload="auto" src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_5b4b2a1e37.mp3?filename=siren-ambience-116733.mp3"></audio>
+  <div class="content" id="alertContent">
+    <p>Esperando alertas...</p>
+  </div>
 
-  <script src="/socket.io/socket.io.js"></script>
+  <div class="footer">
+    Bomberos Voluntarios de Colón
+  </div>
+
+  <audio id="sirena" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
+
   <script>
     const socket = io();
+    const content = document.getElementById("alertContent");
+    const body = document.body;
+    const sirena = document.getElementById("sirena");
 
-    const tipoEl = document.getElementById('tipo');
-    const prioridadEl = document.getElementById('prioridad');
-    const dirEl = document.getElementById('direccion');
-    const horaDespEl = document.getElementById('hora-despacho');
-    const banner = document.querySelector('.banner');
-    const siren = document.getElementById('siren');
+    socket.on("alert", (data) => {
+      content.innerHTML = `
+        <div>
+          <h1>${data.tipo}</h1>
+          <p>${data.descripcion || ""}</p>
+          <p>Despachado por: <strong>${data.despachadoPor}</strong></p>
+          <p>Contacto: ${data.contacto || "-"}</p>
+          <p>Hora: ${data.timestamp}</p>
+        </div>
+      `;
+      body.classList.add("blink");
+
+      sirena.currentTime = 0;
+      sirena.play().catch(() => {
+        console.log("El navegador bloqueó la reproducción automática del sonido.");
+      });
+    });
+
+    socket.on("clearAlert", () => {
+      content.innerHTML = "<p>Esperando alertas...</p>";
+      body.classList.remove("blink");
+    });
 
     // Reloj en vivo
-    function updateClock(){
+    function updateClock() {
       const now = new Date();
-      const hh = String(now.getHours()).padStart(2,'0');
-      const mm = String(now.getMinutes()).padStart(2,'0');
-      const ss = String(now.getSeconds()).padStart(2,'0');
-      document.getElementById('clock').textContent = `${hh}:${mm}:${ss}`;
+      document.getElementById("clock").innerText = now.toLocaleTimeString("es-AR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
     }
     setInterval(updateClock, 1000);
     updateClock();
-
-    // Mostrar mensaje
-    function showAlert(msg){
-      document.body.classList.remove('urgent');
-      tipoEl.textContent = msg.tipo || '';
-      prioridadEl.textContent = msg.prioridad ? `PRIORIDAD: ${msg.prioridad}` : '';
-      dirEl.textContent = msg.direccion || msg.detalle || '';
-      horaDespEl.textContent = msg.receivedAt ? `Despacho: ${new Date(msg.receivedAt).toLocaleString()}` : '';
-
-      banner.textContent = '¡ALERTA RECIBIDA!';
-      if ((msg.prioridad || '').toLowerCase() === 'urgente') {
-        document.body.classList.add('urgent');
-        // Intentar reproducir sirena (puede bloquear el navegador hasta que haya interacción)
-        siren.currentTime = 0;
-        const playPromise = siren.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(e => {
-            // bloqueo de autoplay: mostramos instrucción para habilitar audio
-            banner.textContent = 'Alerta (activar sonido: clic en pantalla)';
-            // al primer clic del usuario, intentamos reproducir
-            const onClickTry = () => { siren.play().catch(()=>{}); window.removeEventListener('click', onClickTry); };
-            window.addEventListener('click', onClickTry);
-          });
-        }
-      }
-    }
-
-    // Limpia el visor
-    function clearAlert(){
-      tipoEl.textContent = 'Esperando siniestros...';
-      prioridadEl.textContent = '';
-      dirEl.textContent = '';
-      horaDespEl.textContent = '';
-      banner.textContent = 'Esperando siniestros...';
-      document.body.classList.remove('urgent');
-    }
-
-    socket.on('connect', () => { banner.textContent = 'Conectado al servidor' });
-    socket.on('disconnect', () => { banner.textContent = 'Desconectado - reintentando...' });
-
-    socket.on('siniestro', msg => {
-      showAlert(msg);
-    });
-
-    socket.on('clear', () => {
-      clearAlert();
-    });
-
-    // Si recibimos un nuevo siniestro, el servidor se encarga de limpiar el anterior
-    // y de programar el clear automático; el visor reacciona con los eventos 'siniestro' y 'clear'.
-
   </script>
 </body>
 </html>
+
+
 
