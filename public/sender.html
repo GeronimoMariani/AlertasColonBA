@@ -3,151 +3,102 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visor de Alertas - Bomberos Voluntarios de Colón</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <title>Enviar Alerta - Bomberos Voluntarios de Colón</title>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <style>
     body {
+      background-color: #000;
+      color: white;
       font-family: Arial, sans-serif;
-      background-color: #fff;
-      color: #222;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100vh;
-      margin: 0;
       text-align: center;
-    }
-
-    h1 {
-      color: red;
-      margin-bottom: 10px;
+      margin: 0;
+      overflow: hidden;
     }
 
     img {
-      width: 120px;
-      margin-bottom: 15px;
+      width: 200px;
+      margin-bottom: 30px;
     }
 
-    form {
-      display: flex;
-      flex-direction: column;
-      width: 90%;
-      max-width: 400px;
-      gap: 15px;
+    h1 {
+      font-size: 3em;
+      color: red;
+      text-transform: uppercase;
+      margin: 0 0 15px 0;
+      animation: blink 1s infinite;
     }
 
-    select, input, textarea, button {
-      font-size: 1rem;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
+    h2 {
+      font-size: 2em;
+      margin: 10px 0;
     }
 
-    button {
-      background-color: red;
-      color: white;
-      border: none;
-      cursor: pointer;
-      font-size: 1.1rem;
+    p {
+      font-size: 1.4em;
+      margin: 5px 0;
     }
 
-    button:hover {
-      background-color: darkred;
-    }
-
-    #login {
-      text-align: center;
-    }
-
-    #login input {
-      margin-top: 10px;
+    @keyframes blink {
+      0%, 50%, 100% { opacity: 1; }
+      25%, 75% { opacity: 0; }
     }
   </style>
 </head>
 <body>
-  <div id="login">
-    <img src="logo.png" alt="Logo Bomberos" />
-    <h1>Acceso al sistema</h1>
-    <p>Ingrese la contraseña para acceder al envío de alertas</p>
-    <input type="password" id="passwordInput" placeholder="Contraseña" />
-    <button onclick="checkPassword()">Ingresar</button>
+  <img src="logo.png" alt="Logo Bomberos" />
+  <h1>En espera de alertas...</h1>
+  <div id="alertInfo" style="display:none;">
+    <h1 id="tipo"></h1>
+    <h2 id="direccion"></h2>
+    <p id="descripcion"></p>
+    <p><strong>Despachado por:</strong> <span id="despachadoPor"></span></p>
+    <p><strong>Contacto:</strong> <span id="contacto"></span></p>
+    <p><strong>Hora:</strong> <span id="hora"></span></p>
   </div>
 
-  <div id="main" style="display:none;">
-    <img src="logo.png" alt="Logo Bomberos" />
-    <h1>Enviar Alerta</h1>
-    <form id="alertForm">
-      <label>Tipo de siniestro:</label>
-      <select id="tipo" required>
-        <option value="Incendio">Incendio</option>
-        <option value="Forestal">Forestal</option>
-        <option value="Accidente">Accidente</option>
-        <option value="Rescate">Rescate</option>
-        <option value="Materiales Peligrosos">Materiales Peligrosos</option>
-      </select>
-
-      <label>Dirección:</label>
-      <input type="text" id="direccion" placeholder="Ej: Calle 25 y Moreno" required />
-
-      <label>Descripción:</label>
-      <textarea id="descripcion" rows="3" placeholder="Detalles del siniestro"></textarea>
-
-      <label>Despachado por:</label>
-      <select id="despachadoPor" required>
-        <option value="CUARTEL 60">CUARTEL 60</option>
-        <option value="POLICÍA">POLICÍA</option>
-        <option value="GUM">GUM</option>
-      </select>
-
-      <label>Contacto:</label>
-      <input type="text" id="contacto" placeholder="Ej: Interno 23 o Teléfono" />
-
-      <button type="submit">🚨 Enviar Alerta</button>
-    </form>
-  </div>
+  <audio id="sirena" src="https://actions.google.com/sounds/v1/emergency/air_raid_siren.ogg"></audio>
 
   <script>
-    const socket = io();
-    const PASSWORD = "bomberosba60";
+    const socket = io("https://alertascolonba.onrender.com/"); // 🔴 Cambiar si tu dominio Render es distinto
+    const sirena = document.getElementById("sirena");
 
-    function checkPassword() {
-      const pass = document.getElementById("passwordInput").value;
-      if (pass === PASSWORD) {
-        sessionStorage.setItem("authenticated", "true");
-        document.getElementById("login").style.display = "none";
-        document.getElementById("main").style.display = "block";
-      } else {
-        alert("Contraseña incorrecta");
-      }
-    }
+    socket.on("alert", (data) => {
+      document.querySelector("h1").style.display = "none";
+      document.getElementById("alertInfo").style.display = "block";
 
-    window.onload = () => {
-      if (sessionStorage.getItem("authenticated") === "true") {
-        document.getElementById("login").style.display = "none";
-        document.getElementById("main").style.display = "block";
-      }
-    };
+      document.getElementById("tipo").textContent = data.tipo;
+      document.getElementById("direccion").textContent = data.direccion;
+      document.getElementById("descripcion").textContent = data.descripcion || "—";
+      document.getElementById("despachadoPor").textContent = data.despachadoPor;
+      document.getElementById("contacto").textContent = data.contacto || "—";
+      document.getElementById("hora").textContent = data.timestamp || "";
 
-    document.getElementById("alertForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-
-      const data = {
-        tipo: document.getElementById("tipo").value,
-        direccion: document.getElementById("direccion").value,
-        descripcion: document.getElementById("descripcion").value,
-        despachadoPor: document.getElementById("despachadoPor").value,
-        contacto: document.getElementById("contacto").value,
+      // reproducir sirena 3 veces sí o sí
+      let count = 0;
+      sirena.volume = 1.0;
+      sirena.play();
+      sirena.onended = () => {
+        count++;
+        if (count < 3) sirena.play();
       };
+    });
 
-      socket.emit("sendAlert", data);
-      alert("🚨 Alerta enviada correctamente");
-      e.target.reset();
+    socket.on("clearAlert", () => {
+      document.getElementById("alertInfo").style.display = "none";
+      document.querySelector("h1").textContent = "En espera de alertas...";
+      document.querySelector("h1").style.display = "block";
     });
   </script>
 </body>
 </html>
+
+
 
 
 
