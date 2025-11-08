@@ -10,7 +10,6 @@
     body {
       margin: 0;
       font-family: "Segoe UI", Arial, sans-serif;
-      background-color: #111;
       color: #fff;
       display: flex;
       flex-direction: column;
@@ -18,6 +17,15 @@
       justify-content: flex-start;
       height: 100vh;
       overflow: hidden;
+      background: linear-gradient(135deg, #1a0000, #000000);
+      background-size: 400% 400%;
+      animation: gradientMove 20s ease infinite;
+    }
+
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
 
     header {
@@ -26,17 +34,17 @@
       justify-content: space-between;
       width: 100%;
       padding: 20px 40px;
-      background-color: #222;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+      background: rgba(0, 0, 0, 0.5);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.6);
     }
 
     header img {
-      width: 100px;
+      width: 110px;
     }
 
     #datetime {
-      font-size: 1.5rem;
-      color: #ccc;
+      font-size: 1.6rem;
+      color: #ddd;
       text-align: right;
     }
 
@@ -48,39 +56,60 @@
       flex-grow: 1;
       text-align: center;
       width: 100%;
+      padding: 20px;
     }
 
     h1 {
-      font-size: 4rem;
-      color: red;
-      margin-bottom: 20px;
+      font-size: 4.5rem;
+      color: #ff0000;
+      margin-bottom: 25px;
       animation: blink 1s infinite;
+      text-transform: uppercase;
+      text-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
     }
 
     h2 {
-      font-size: 2rem;
-      margin-bottom: 10px;
+      font-size: 2.4rem;
+      margin-bottom: 15px;
       color: #fff;
+      text-shadow: 0 0 15px rgba(255,255,255,0.3);
     }
 
     p {
-      font-size: 1.8rem;
+      font-size: 2rem;
       margin: 8px 0;
     }
 
     .info {
-      font-size: 1.4rem;
+      font-size: 1.6rem;
       color: #ccc;
     }
 
-    @keyframes blink {
-      50% { opacity: 0.3; }
+    #noAlertContainer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      opacity: 0.9;
     }
 
-    #noAlert {
-      color: #aaa;
-      font-size: 2rem;
-      text-align: center;
+    #noAlertContainer img {
+      width: 250px;
+      margin-bottom: 25px;
+      filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.8));
+    }
+
+    #noAlertContainer h2 {
+      color: #eee;
+      font-size: 2.4rem;
+      letter-spacing: 1px;
+      text-shadow: 0 0 15px rgba(255,255,255,0.4);
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
     }
 
     audio {
@@ -96,7 +125,10 @@
 
   <main>
     <div id="alertContainer">
-      <p id="noAlert">Esperando alertas...</p>
+      <div id="noAlertContainer">
+        <img src="logo.png" alt="Logo Bomberos" />
+        <h2>SIN ALERTAS ACTIVAS</h2>
+      </div>
     </div>
   </main>
 
@@ -109,19 +141,21 @@
     const container = document.getElementById("alertContainer");
     const datetime = document.getElementById("datetime");
 
+    // Reproduce la sirena 3 veces
     function playSirena(times = 3) {
       let count = 0;
       const play = () => {
         sirena.currentTime = 0;
-        sirena.play();
+        sirena.play().catch(() => {}); // por si el navegador bloquea el autoplay
         count++;
         if (count < times) {
-          setTimeout(play, sirena.duration * 1000 + 500);
+          setTimeout(play, (sirena.duration * 1000) + 500);
         }
       };
       play();
     }
 
+    // Actualiza la fecha y hora en tiempo real
     function updateDateTime() {
       const now = new Date();
       const options = {
@@ -137,11 +171,12 @@
     setInterval(updateDateTime, 1000);
     updateDateTime();
 
+    // Recibir alerta desde el servidor
     socket.on("alert", (data) => {
       playSirena(3);
 
       container.innerHTML = `
-        <h1>${data.tipo}</h1>
+        <h1>${data.tipo.toUpperCase()}</h1>
         <h2>${data.direccion}</h2>
         <p>${data.descripcion || ""}</p>
         <p class="info">Despachado por: ${data.despachadoPor}</p>
@@ -150,8 +185,14 @@
       `;
     });
 
+    // Limpiar alerta (modo espera)
     socket.on("clearAlert", () => {
-      container.innerHTML = `<p id="noAlert">Esperando alertas...</p>`;
+      container.innerHTML = `
+        <div id="noAlertContainer">
+          <img src="logo.png" alt="Logo Bomberos" />
+          <h2>SIN ALERTAS ACTIVAS</h2>
+        </div>
+      `;
     });
   </script>
 </body>
