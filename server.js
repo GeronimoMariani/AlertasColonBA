@@ -49,7 +49,7 @@ io.on("connection", (socket) => {
     alertTimeout = setTimeout(() => {
       lastAlert = null;
       io.emit("clearAlert");
-    }, 30 * 60 * 1000);
+    }, 10 * 60 * 1000);
   });
 
   socket.on("clearAlertManual", () => {
