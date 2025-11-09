@@ -243,13 +243,59 @@
       setTimeout(() => {
         btn.disabled = false;
         loading.style.display = "none";
-        alert("✅ Alerta enviada correctamente");
+        const now = new Date();
+        const hora = now.toLocaleTimeString("es-AR", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false
+        });
+        playBeep();
+        showMessage(`✅ Alerta enviada correctamente (${hora})`, "success");
         e.target.reset();
       }, 1000);
     });
+
+    function showMessage(text, type = "info") {
+      const msg = document.createElement("div");
+      msg.textContent = text;
+      msg.style.position = "fixed";
+      msg.style.top = "20px";
+      msg.style.left = "50%";
+      msg.style.transform = "translateX(-50%)";
+      msg.style.background = type === "success" ? "#28a745" : "#dc3545";
+      msg.style.color = "#fff";
+      msg.style.padding = "12px 20px";
+      msg.style.borderRadius = "8px";
+      msg.style.fontSize = "1rem";
+      msg.style.zIndex = "9999";
+      msg.style.boxShadow = "0 0 10px rgba(0,0,0,0.3)";
+      msg.style.opacity = "0";
+      msg.style.transition = "opacity 0.3s ease";
+
+      document.body.appendChild(msg);
+      setTimeout(() => (msg.style.opacity = "1"), 10);
+      setTimeout(() => {
+        msg.style.opacity = "0";
+        setTimeout(() => msg.remove(), 500);
+      }, 4000);
+    }
+
+    function playBeep() {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "sine";
+      o.frequency.value = 880;
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.start();
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.3);
+      o.stop(ctx.currentTime + 0.3);
+    }
   </script>
 </body>
 </html>
+
 
 
 
