@@ -152,18 +152,12 @@
     const datetime = document.getElementById("datetime");
 
     // Reproduce la sirena 3 veces
-    function playSirena(times = 1) {
-      let count = 0;
-      const play = () => {
-        sirena.currentTime = 0;
-        sirena.play().catch(() => {}); // por si el navegador bloquea el autoplay
-        count++;
-        if (count < times) {
-          setTimeout(play, (sirena.duration * 1000) + 500);
-        }
-      };
-      play();
+    function playSirena() {
+      sirena.pause();
+      sirena.currentTime = 0;
+      sirena.play().catch(() => {});
     }
+
 
     // Actualiza la fecha y hora en tiempo real
     function updateDateTime() {
@@ -183,7 +177,7 @@
 
     // Recibir alerta desde el servidor
     socket.on("alert", (data) => {
-      playSirena(3);
+      playSirena();
 
       container.innerHTML = `
         <h1>${data.tipo.toUpperCase()}</h1>
