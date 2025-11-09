@@ -6,6 +6,7 @@
   <title>Enviar Alerta - Bomberos Voluntarios de Colón</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
   <style>
     body {
       font-family: "Segoe UI", Arial, sans-serif;
@@ -141,7 +142,63 @@
       }
     }
   </style>
+
+  <!-- 🔥 Firebase Integración -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } 
+      from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAuVQVoyQG_bSOhyb-cbs-UcQa4G6K8h6k",
+      authDomain: "alertascolonba.firebaseapp.com",
+      projectId: "alertascolonba",
+      storageBucket: "alertascolonba.firebasestorage.app",
+      messagingSenderId: "665310922522",
+      appId: "1:665310922522:web:cf270348a2fe1beee30ea3",
+      measurementId: "G-GCFSNGPXQS"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Guardar alerta en Firebase
+    async function guardarAlertaFirebase(data) {
+      try {
+        await addDoc(collection(db, "alertas"), {
+          ...data,
+          timestamp: new Date().toISOString()
+        });
+        console.log("✅ Alerta guardada en Firestore");
+      } catch (e) {
+        console.error("Error al guardar alerta:", e);
+      }
+    }
+
+    // Escuchar historial en tiempo real
+    function escucharHistorial() {
+      const contenedor = document.getElementById("historial");
+      const q = query(collection(db, "alertas"), orderBy("timestamp", "desc"));
+      onSnapshot(q, (snapshot) => {
+        contenedor.innerHTML = "";
+        snapshot.forEach((doc) => {
+          const a = doc.data();
+          const fecha = new Date(a.timestamp);
+          const hora = fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+          const item = document.createElement("div");
+          item.innerHTML = `<strong style="color:red;">${a.tipo.toUpperCase()}</strong> — ${a.direccion} (${hora})`;
+          item.style.marginBottom = "6px";
+          contenedor.appendChild(item);
+        });
+      });
+    }
+
+    // Hacer accesible desde el resto del código
+    window.guardarAlertaFirebase = guardarAlertaFirebase;
+    window.escucharHistorial = escucharHistorial;
+  </script>
 </head>
+
 <body>
   <div id="login">
     <img src="logo.png" alt="Logo Bomberos" />
@@ -187,10 +244,15 @@
       <button type="submit" id="sendBtn">🚨 ENVIAR ALERTA</button>
       <div id="loading">📡 Enviando alerta<span>...</span></div>
     </form>
+
+    <div style="margin-top:30px; width:100%; max-width:800px; text-align:left;">
+      <h3 style="color:red;">📜 Historial de alertas</h3>
+      <div id="historial" style="font-size:1rem; color:#333;"></div>
+    </div>
   </div>
 
   <script>
-    const socket = io("https://alertascolonba.onrender.com");
+    const socket = io("http://localhost:3000");
     const PASSWORD = "bomberosba60";
 
     function checkPassword() {
@@ -211,6 +273,7 @@
       }
       updateDateTime();
       setInterval(updateDateTime, 1000);
+      if (window.escucharHistorial) escucharHistorial();
     };
 
     function updateDateTime() {
@@ -239,6 +302,7 @@
       };
 
       socket.emit("sendAlert", data);
+      guardarAlertaFirebase(data);
 
       setTimeout(() => {
         btn.disabled = false;
@@ -295,6 +359,7 @@
   </script>
 </body>
 </html>
+
 
 
 
