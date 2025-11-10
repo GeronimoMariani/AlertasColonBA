@@ -141,6 +141,24 @@
         font-size: 1.6rem;
       }
     }
+
+    #verHistorialBtn {
+      display: inline-block;
+      text-align: center;
+      background-color: #555;
+      color: white;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border-radius: 8px;
+      padding: 12px;
+      text-decoration: none;
+      transition: 0.3s;
+      margin-top: 10px;
+    }
+
+    #verHistorialBtn:hover {
+      background-color: #333;
+    }
   </style>
 
   <!-- 🔥 Firebase Integración -->
@@ -246,25 +264,32 @@
     </form>
 
     <div style="margin-top:30px; width:100%; max-width:800px; text-align:left;">
-      <h3 style="color:red;">📜 Historial de alertas</h3>
-      <div id="historial" style="font-size:1rem; color:#333;"></div>
+      <a href="historial.html" id="verHistorialBtn">📜 Ver historial de alertas</a>
     </div>
   </div>
 
   <script>
     const socket = io("http://localhost:3000");
-    const PASSWORD = "bomberosba60";
 
     function checkPassword() {
-      const pass = document.getElementById("passwordInput").value;
-      if (pass === PASSWORD) {
-        sessionStorage.setItem("authenticated", "true");
-        document.getElementById("login").style.display = "none";
-        document.getElementById("main").style.display = "block";
-      } else {
-        alert("Contraseña incorrecta");
-      }
-    }
+    const pass = document.getElementById("passwordInput").value;
+
+    fetch("/check-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: pass })
+    })
+      .then(res => {
+        if (res.ok) {
+          sessionStorage.setItem("authenticated", "true");
+          document.getElementById("login").style.display = "none";
+          document.getElementById("main").style.display = "block";
+        } else {
+          alert("Contraseña incorrecta");
+        }
+      })
+      .catch(() => alert("Error al conectar con el servidor"));
+  }
 
     window.onload = () => {
       if (sessionStorage.getItem("authenticated") === "true") {

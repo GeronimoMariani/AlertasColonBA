@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Historial de Alertas - Bomberos Voluntarios de Colón</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background-color: #fff;
+      color: #111;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      margin: 0;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 1000px;
+      margin-bottom: 30px;
+    }
+
+    header img {
+      width: 100px;
+    }
+
+    h1 {
+      color: red;
+      font-size: 2rem;
+      margin: 0;
+      text-align: center;
+      width: 100%;
+    }
+
+    #alertasContainer {
+      width: 100%;
+      max-width: 1000px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .alert-card {
+      border: 2px solid red;
+      border-radius: 10px;
+      padding: 15px;
+      background-color: #fff5f5;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .alert-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+      color: #b30000;
+      font-size: 1.2rem;
+    }
+
+    .alert-body {
+      margin-top: 10px;
+      line-height: 1.5;
+    }
+
+    .alert-footer {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: #555;
+    }
+
+    a.volver {
+      display: inline-block;
+      background: red;
+      color: white;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+
+    a.volver:hover {
+      background: darkred;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="logo.png" alt="Logo Bomberos" />
+    <h1>Historial de Alertas</h1>
+  </header>
+
+  <div id="alertasContainer">Cargando alertas...</div>
+
+  <a href="sender.html" class="volver">⬅ Volver al envío</a>
+
+  <script type="module">
+    // Importar Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getFirestore, collection, getDocs, orderBy, query } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAuVQVoyQG_bSOhyb-cbs-UcQa4G6K8h6k",
+      authDomain: "alertascolonba.firebaseapp.com",
+      projectId: "alertascolonba",
+      storageBucket: "alertascolonba.firebasestorage.app",
+      messagingSenderId: "665310922522",
+      appId: "1:665310922522:web:cf270348a2fe1beee30ea3",
+      measurementId: "G-GCFSNGPXQS"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const contenedor = document.getElementById("alertasContainer");
+
+    async function cargarAlertas() {
+      try {
+        const q = query(collection(db, "alertas"), orderBy("timestamp", "desc"));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+          contenedor.innerHTML = "<p>No hay alertas registradas.</p>";
+          return;
+        }
+
+        contenedor.innerHTML = "";
+        querySnapshot.forEach(doc => {
+          const data = doc.data();
+          const card = document.createElement("div");
+          card.className = "alert-card";
+          card.innerHTML = `
+            <div class="alert-header">
+              <span>🚨 ${data.tipo}</span>
+              <span>${new Date(data.timestamp?.toDate?.() || data.timestamp).toLocaleString("es-AR")}</span>
+            </div>
+            <div class="alert-body">
+              <p><strong>Dirección:</strong> ${data.direccion}</p>
+              <p><strong>Descripción:</strong> ${data.descripcion}</p>
+              <p><strong>Despachado por:</strong> ${data.despachadoPor}</p>
+              <p><strong>Contacto:</strong> ${data.contacto || "N/A"}</p>
+            </div>
+          `;
+          contenedor.appendChild(card);
+        });
+      } catch (error) {
+        console.error(error);
+        contenedor.innerHTML = "<p>Error al cargar las alertas.</p>";
+      }
+    }
+
+    cargarAlertas();
+  </script>
+</body>
+</html>

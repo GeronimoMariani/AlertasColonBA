@@ -2,6 +2,7 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
+require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
@@ -9,6 +10,16 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
+
+app.post("/check-password", (req, res) => {
+  const { password } = req.body;
+  if (password === process.env.SENDER_PASSWORD) {
+    res.json({ success: true });
+  } else {
+    res.status(401).json({ success: false });
+  }
+});
+
 
 let lastAlert = null;
 let alertTimeout = null;
