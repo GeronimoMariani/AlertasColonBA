@@ -3,6 +3,8 @@ const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
 require('dotenv').config();
+const axios = require("axios");
+
 
 const app = express();
 const server = http.createServer(app);
@@ -28,6 +30,38 @@ let alertHistory = []; // 🔥 Guardamos historial de alertas
 io.on("connection", (socket) => {
   console.log("Nuevo visor conectado");
 
+  async function enviarWhatsApp(alerta) {
+      try {
+        const mensaje = `🚨 *NUEVA ALERTA* 🚨
+    Tipo: ${alerta.tipo.toUpperCase()}
+    Dirección: ${alerta.direccion}
+    Descripción: ${alerta.descripcion}
+    Despachado por: ${alerta.despachadoPor}
+    Contacto: ${alerta.contacto}
+    Hora: ${alerta.timestamp}`;
+
+        await axios.post(
+          `https://graph.facebook.com/v22.0/${process.env.WHATSAPP_PHONE_ID}/messages`,
+          {
+            messaging_product: "whatsapp",
+            to: process.env.WHATSAPP_NUMBER_DESTINO,
+            type: "text",
+            text: { body: mensaje },
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        console.log("✅ Mensaje de WhatsApp enviado correctamente");
+      } catch (error) {
+        console.error("❌ Error al enviar mensaje de WhatsApp:", error.response?.data || error.message);
+      }
+    }
+
   // Enviar última alerta activa y el historial
   if (lastAlert) socket.emit("alert", lastAlert);
   socket.emit("history", alertHistory);
@@ -44,8 +78,10 @@ io.on("connection", (socket) => {
       year: "numeric",
       timeZone: "America/Argentina/Buenos_Aires",
     });
-
+    
     lastAlert = { ...data, timestamp };
+    
+    enviarWhatsApp(lastAlert);
 
     // Guardar en historial
     alertHistory.unshift(lastAlert);

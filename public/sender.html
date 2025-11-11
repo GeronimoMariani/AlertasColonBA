@@ -269,7 +269,14 @@
   </div>
 
   <script>
-    const socket = io("http://localhost:3000");
+    const socket = io("https://alertascolonba.onrender.com/", {
+    reconnection: true,              // habilita la reconexión automática
+    reconnectionAttempts: Infinity,  // intenta reconectar sin límite
+    reconnectionDelay: 2000,         // espera 2 segundos antes de reintentar
+    reconnectionDelayMax: 5000,      // máximo 5 segundos entre intentos
+    timeout: 10000,                  // tiempo máximo de espera por conexión
+  });
+
 
     function checkPassword() {
     const pass = document.getElementById("passwordInput").value;

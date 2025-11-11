@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Visor de Alertas - Bomberos Voluntarios de Colón</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico"/>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <style>
     body {
@@ -145,7 +145,14 @@
   <audio id="sirena" src="sirena.mp3"></audio>
 
   <script>
-    const socket = io("http://localhost:3000");
+    const socket = io("https://alertascolonba.onrender.com/", {
+    reconnection: true,              // habilita la reconexión automática
+    reconnectionAttempts: Infinity,  // intenta reconectar sin límite
+    reconnectionDelay: 2000,         // espera 2 segundos antes de reintentar
+    reconnectionDelayMax: 5000,      // máximo 5 segundos entre intentos
+    timeout: 10000,                  // tiempo máximo de espera por conexión
+  });
+
 
     const sirena = document.getElementById("sirena");
     const container = document.getElementById("alertContainer");
