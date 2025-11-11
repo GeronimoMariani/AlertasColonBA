@@ -1,4 +1,4 @@
-const socket = io("http://localhost:3000/", {
+const socket = io("https://alertascolonba.onrender.com", {
   reconnection: true,
   reconnectionAttempts: Infinity,
   reconnectionDelay: 2000,
