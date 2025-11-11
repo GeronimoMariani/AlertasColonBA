@@ -1,0 +1,79 @@
+/* --- Estilo general --- */
+body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  background: linear-gradient(180deg, #000000 0%, #1a0000 100%);
+  color: white;
+  font-family: 'Segoe UI', sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* --- Contenedor principal --- */
+.container {
+  text-align: center;
+  animation: fadeIn 1.5s ease;
+}
+
+/* --- Logo --- */
+.logo-section {
+  margin-bottom: 20px;
+}
+
+.logo {
+  width: 140px;
+  height: auto;
+  animation: pulse 2.5s infinite;
+}
+
+/* --- Textos --- */
+.text-section h1 {
+  font-size: 2.2rem;
+  color: #ff1a1a;
+  margin-bottom: 10px;
+  text-shadow: 0 0 10px #ff0000aa;
+}
+
+.text-section h2 {
+  font-size: 1.2rem;
+  color: #ccc;
+  margin-bottom: 30px;
+}
+
+/* --- Botón --- */
+.btn {
+  background-color: #e60000;
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  padding: 14px 30px;
+  border-radius: 8px;
+  box-shadow: 0 0 20px #ff0000aa;
+  transition: 0.3s;
+}
+
+.btn:hover {
+  background-color: #ff1a1a;
+  box-shadow: 0 0 30px #ff0000cc;
+  transform: scale(1.05);
+}
+
+/* --- Footer --- */
+footer {
+  margin-top: 40px;
+  color: #777;
+  font-size: 0.9rem;
+}
+
+/* --- Animaciones --- */
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.05); opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}

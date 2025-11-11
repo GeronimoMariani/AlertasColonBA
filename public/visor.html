@@ -5,117 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Visor de Alertas - Bomberos Voluntarios de Colón</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico"/>
+  <link rel="stylesheet" href="css/visor.css">
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-  <style>
-    body {
-      margin: 0;
-      font-family: "Segoe UI", Arial, sans-serif;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      height: 100vh;
-      overflow: hidden;
-      background: linear-gradient(135deg, #1a0000, #000000);
-      background-size: 400% 400%;
-      animation: gradientMove 20s ease infinite;
-    }
-
-    @keyframes gradientMove {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      padding: 20px 40px;
-      background: rgba(0, 0, 0, 0.5);
-      box-shadow: 0 2px 10px rgba(0,0,0,0.6);
-    }
-
-    header img {
-      width: 110px;
-    }
-
-    #datetime {
-      font-size: 1.6rem;
-      color: #ddd;
-      text-align: right;
-    }
-
-    main {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      flex-grow: 1;
-      text-align: center;
-      width: 100%;
-      padding: 20px;
-    }
-
-    h1 {
-      font-size: 4.5rem;
-      color: #ff0000;
-      margin-bottom: 25px;
-      animation: blink 1s infinite;
-      text-transform: uppercase;
-      text-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
-    }
-
-    h2 {
-      font-size: 2.4rem;
-      margin-bottom: 15px;
-      color: #fff;
-      text-shadow: 0 0 15px rgba(255,255,255,0.3);
-    }
-
-    p {
-      font-size: 2rem;
-      margin: 8px 0;
-    }
-
-    .info {
-      font-size: 1.6rem;
-      color: #ccc;
-    }
-
-    #noAlertContainer {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      opacity: 0.9;
-    }
-
-    #noAlertContainer img {
-      width: 250px;
-      margin-bottom: 25px;
-      filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.8));
-    }
-
-    #noAlertContainer h2 {
-      color: #eee;
-      font-size: 2.4rem;
-      letter-spacing: 1px;
-      text-shadow: 0 0 15px rgba(255,255,255,0.4);
-    }
-
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
-    }
-
-    audio {
-      display: none;
-    }
-  </style>
 </head>
 <body>
   <header>
@@ -131,98 +22,14 @@
       </div>
     </div>
   </main>
-  <div id="status" style="
-    position: fixed;
-    bottom: 10px;
-    right: 15px;
-    font-size: 1rem;
-    color: #fff;
-    opacity: 0.8;
-    font-family: Arial, sans-serif;">
-  </div>
 
-
+  <div id="status"></div>
   <audio id="sirena" src="sirena.mp3"></audio>
 
-  <script>
-    const socket = io("https://alertascolonba.onrender.com/", {
-    reconnection: true,              // habilita la reconexión automática
-    reconnectionAttempts: Infinity,  // intenta reconectar sin límite
-    reconnectionDelay: 2000,         // espera 2 segundos antes de reintentar
-    reconnectionDelayMax: 5000,      // máximo 5 segundos entre intentos
-    timeout: 10000,                  // tiempo máximo de espera por conexión
-  });
-
-
-    const sirena = document.getElementById("sirena");
-    const container = document.getElementById("alertContainer");
-    const datetime = document.getElementById("datetime");
-
-    // Reproduce la sirena 3 veces
-    function playSirena() {
-      sirena.pause();
-      sirena.currentTime = 0;
-      sirena.play().catch(() => {});
-    }
-
-
-    // Actualiza la fecha y hora en tiempo real
-    function updateDateTime() {
-      const now = new Date();
-      const options = {
-        timeZone: "America/Argentina/Buenos_Aires",
-        hour: "2-digit",
-        minute: "2-digit"
-      };
-      const hora = now.toLocaleTimeString("es-AR", options);
-      const fecha = now.toLocaleDateString("es-AR");
-      datetime.textContent = `${fecha} — ${hora}`;
-    }
-
-    setInterval(updateDateTime, 1000);
-    updateDateTime();
-
-    // Recibir alerta desde el servidor
-    socket.on("alert", (data) => {
-      playSirena();
-
-      container.innerHTML = `
-        <h1>${data.tipo.toUpperCase()}</h1>
-        <h2>${data.direccion}</h2>
-        <p>${data.descripcion || ""}</p>
-        <p class="info">Despachado por: ${data.despachadoPor}</p>
-        <p class="info">Contacto: ${data.contacto || "—"}</p>
-        <p class="info">Hora: ${data.timestamp}</p>
-      `;
-    });
-
-    // Limpiar alerta (modo espera)
-    socket.on("clearAlert", () => {
-      container.innerHTML = `
-        <div id="noAlertContainer">
-          <img src="logo.png" alt="Logo Bomberos" />
-          <h2>SIN ALERTAS ACTIVAS</h2>
-        </div>
-      `;
-    });
-
-    const statusEl = document.getElementById("status");
-
-    // Mostrar cuando se conecta
-    socket.on("connect", () => {
-      statusEl.textContent = "🟢 Conectado al servidor";
-      statusEl.style.color = "#0f0";
-    });
-
-    // Mostrar cuando se desconecta
-    socket.on("disconnect", () => {
-      statusEl.textContent = "🔴 Sin conexión";
-      statusEl.style.color = "#f00";
-    });
-
-  </script>
+  <script src="js/visor.js"></script>
 </body>
 </html>
+
 
 
 

@@ -2,8 +2,8 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
-require('dotenv').config();
 const axios = require("axios");
+require('dotenv').config();
 
 
 const app = express();
@@ -12,6 +12,10 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 
 app.post("/check-password", (req, res) => {
   const { password } = req.body;

@@ -5,216 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Enviar Alerta - Bomberos Voluntarios de Colón</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="stylesheet" href="css/sender.css" />
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-
-  <style>
-    body {
-      font-family: "Segoe UI", Arial, sans-serif;
-      background-color: #ffffff;
-      color: #111;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      margin: 0;
-      padding: 20px;
-    }
-
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      max-width: 800px;
-      margin-bottom: 30px;
-    }
-
-    header img {
-      width: 100px;
-    }
-
-    #datetime {
-      text-align: right;
-      font-weight: bold;
-      font-size: 1.1rem;
-      color: #444;
-    }
-
-    h1 {
-      color: red;
-      font-size: 2rem;
-      margin: 0;
-      text-align: center;
-      width: 100%;
-    }
-
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      width: 100%;
-      max-width: 800px;
-    }
-
-    label {
-      font-size: 1.2rem;
-      font-weight: 600;
-      color: #333;
-      text-align: left;
-    }
-
-    input, select, textarea, button {
-      font-size: 1.2rem;
-      padding: 14px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    textarea {
-      resize: none;
-    }
-
-    button {
-      background-color: red;
-      color: white;
-      font-size: 1.4rem;
-      border: none;
-      border-radius: 10px;
-      padding: 16px;
-      cursor: pointer;
-      transition: 0.3s;
-      font-weight: bold;
-    }
-
-    button:hover:not(:disabled) {
-      background-color: darkred;
-    }
-
-    button:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-    }
-
-    #loading {
-      display: none;
-      margin-top: 10px;
-      font-size: 1.2rem;
-      color: #333;
-      font-weight: bold;
-    }
-
-    #loading span {
-      animation: blink 1.2s infinite;
-    }
-
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
-
-    #login {
-      text-align: center;
-      margin-top: 80px;
-    }
-
-    #login img {
-      width: 140px;
-      margin-bottom: 20px;
-    }
-
-    #login input {
-      margin-top: 10px;
-      font-size: 1.1rem;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-
-    @media (max-width: 600px) {
-      header img {
-        width: 80px;
-      }
-      h1 {
-        font-size: 1.6rem;
-      }
-    }
-
-    #verHistorialBtn {
-      display: inline-block;
-      text-align: center;
-      background-color: #555;
-      color: white;
-      font-size: 1.1rem;
-      font-weight: bold;
-      border-radius: 8px;
-      padding: 12px;
-      text-decoration: none;
-      transition: 0.3s;
-      margin-top: 10px;
-    }
-
-    #verHistorialBtn:hover {
-      background-color: #333;
-    }
-  </style>
-
-  <!-- 🔥 Firebase Integración -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } 
-      from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyAuVQVoyQG_bSOhyb-cbs-UcQa4G6K8h6k",
-      authDomain: "alertascolonba.firebaseapp.com",
-      projectId: "alertascolonba",
-      storageBucket: "alertascolonba.firebasestorage.app",
-      messagingSenderId: "665310922522",
-      appId: "1:665310922522:web:cf270348a2fe1beee30ea3",
-      measurementId: "G-GCFSNGPXQS"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    // Guardar alerta en Firebase
-    async function guardarAlertaFirebase(data) {
-      try {
-        await addDoc(collection(db, "alertas"), {
-          ...data,
-          timestamp: new Date().toISOString()
-        });
-        console.log("✅ Alerta guardada en Firestore");
-      } catch (e) {
-        console.error("Error al guardar alerta:", e);
-      }
-    }
-
-    // Escuchar historial en tiempo real
-    function escucharHistorial() {
-      const contenedor = document.getElementById("historial");
-      const q = query(collection(db, "alertas"), orderBy("timestamp", "desc"));
-      onSnapshot(q, (snapshot) => {
-        contenedor.innerHTML = "";
-        snapshot.forEach((doc) => {
-          const a = doc.data();
-          const fecha = new Date(a.timestamp);
-          const hora = fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
-          const item = document.createElement("div");
-          item.innerHTML = `<strong style="color:red;">${a.tipo.toUpperCase()}</strong> — ${a.direccion} (${hora})`;
-          item.style.marginBottom = "6px";
-          contenedor.appendChild(item);
-        });
-      });
-    }
-
-    // Hacer accesible desde el resto del código
-    window.guardarAlertaFirebase = guardarAlertaFirebase;
-    window.escucharHistorial = escucharHistorial;
-  </script>
+  <script type="module" src="js/firebase.js"></script>
 </head>
 
 <body>
@@ -223,7 +16,7 @@
     <h1>Acceso al Sistema</h1>
     <p>Ingrese la contraseña para acceder al envío de alertas</p>
     <input type="password" id="passwordInput" placeholder="Contraseña" />
-    <button onclick="checkPassword()">Ingresar</button>
+    <button id="ingresarBtn">Ingresar</button>
   </div>
 
   <div id="main" style="display:none;">
@@ -233,6 +26,7 @@
     </header>
 
     <h1>Enviar Alerta</h1>
+
     <form id="alertForm">
       <label>Tipo de siniestro:</label>
       <select id="tipo" required>
@@ -268,129 +62,10 @@
     </div>
   </div>
 
-  <script>
-    const socket = io("https://alertascolonba.onrender.com/", {
-    reconnection: true,              // habilita la reconexión automática
-    reconnectionAttempts: Infinity,  // intenta reconectar sin límite
-    reconnectionDelay: 2000,         // espera 2 segundos antes de reintentar
-    reconnectionDelayMax: 5000,      // máximo 5 segundos entre intentos
-    timeout: 10000,                  // tiempo máximo de espera por conexión
-  });
-
-
-    function checkPassword() {
-    const pass = document.getElementById("passwordInput").value;
-
-    fetch("/check-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password: pass })
-    })
-      .then(res => {
-        if (res.ok) {
-          sessionStorage.setItem("authenticated", "true");
-          document.getElementById("login").style.display = "none";
-          document.getElementById("main").style.display = "block";
-        } else {
-          alert("Contraseña incorrecta");
-        }
-      })
-      .catch(() => alert("Error al conectar con el servidor"));
-  }
-
-    window.onload = () => {
-      if (sessionStorage.getItem("authenticated") === "true") {
-        document.getElementById("login").style.display = "none";
-        document.getElementById("main").style.display = "block";
-      }
-      updateDateTime();
-      setInterval(updateDateTime, 1000);
-      if (window.escucharHistorial) escucharHistorial();
-    };
-
-    function updateDateTime() {
-      const now = new Date();
-      const options = { timeZone: "America/Argentina/Buenos_Aires", hour: "2-digit", minute: "2-digit" };
-      const hora = now.toLocaleTimeString("es-AR", options);
-      const fecha = now.toLocaleDateString("es-AR");
-      document.getElementById("datetime").textContent = `${fecha} — ${hora}`;
-    }
-
-    document.getElementById("alertForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const btn = document.getElementById("sendBtn");
-      const loading = document.getElementById("loading");
-      btn.disabled = true;
-      loading.style.display = "block";
-
-      const descripcion = document.getElementById("descripcion").value.toUpperCase();
-
-      const data = {
-        tipo: document.getElementById("tipo").value,
-        direccion: document.getElementById("direccion").value,
-        descripcion: descripcion,
-        despachadoPor: document.getElementById("despachadoPor").value,
-        contacto: document.getElementById("contacto").value,
-      };
-
-      socket.emit("sendAlert", data);
-      guardarAlertaFirebase(data);
-
-      setTimeout(() => {
-        btn.disabled = false;
-        loading.style.display = "none";
-        const now = new Date();
-        const hora = now.toLocaleTimeString("es-AR", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false
-        });
-        playBeep();
-        showMessage(`✅ Alerta enviada correctamente (${hora})`, "success");
-        e.target.reset();
-      }, 1000);
-    });
-
-    function showMessage(text, type = "info") {
-      const msg = document.createElement("div");
-      msg.textContent = text;
-      msg.style.position = "fixed";
-      msg.style.top = "20px";
-      msg.style.left = "50%";
-      msg.style.transform = "translateX(-50%)";
-      msg.style.background = type === "success" ? "#28a745" : "#dc3545";
-      msg.style.color = "#fff";
-      msg.style.padding = "12px 20px";
-      msg.style.borderRadius = "8px";
-      msg.style.fontSize = "1rem";
-      msg.style.zIndex = "9999";
-      msg.style.boxShadow = "0 0 10px rgba(0,0,0,0.3)";
-      msg.style.opacity = "0";
-      msg.style.transition = "opacity 0.3s ease";
-
-      document.body.appendChild(msg);
-      setTimeout(() => (msg.style.opacity = "1"), 10);
-      setTimeout(() => {
-        msg.style.opacity = "0";
-        setTimeout(() => msg.remove(), 500);
-      }, 4000);
-    }
-
-    function playBeep() {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = "sine";
-      o.frequency.value = 880;
-      o.connect(g);
-      g.connect(ctx.destination);
-      o.start();
-      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.3);
-      o.stop(ctx.currentTime + 0.3);
-    }
-  </script>
+  <script type="module" src="js/sender.js"></script>
 </body>
 </html>
+
 
 
 

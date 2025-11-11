@@ -1,0 +1,118 @@
+body {
+  margin: 0;
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  height: 100vh;
+  overflow: hidden;
+  background: linear-gradient(135deg, #1a0000, #000000);
+  background-size: 400% 400%;
+  animation: gradientMove 20s ease infinite;
+}
+
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 20px 40px;
+  background: rgba(0, 0, 0, 0.5);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.6);
+}
+
+header img {
+  width: 110px;
+}
+
+#datetime {
+  font-size: 1.6rem;
+  color: #ddd;
+  text-align: right;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 1;
+  text-align: center;
+  width: 100%;
+  padding: 20px;
+}
+
+h1 {
+  font-size: 4.5rem;
+  color: #ff0000;
+  margin-bottom: 25px;
+  animation: blink 1s infinite;
+  text-transform: uppercase;
+  text-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+}
+
+h2 {
+  font-size: 2.4rem;
+  margin-bottom: 15px;
+  color: #fff;
+  text-shadow: 0 0 15px rgba(255,255,255,0.3);
+}
+
+p {
+  font-size: 2rem;
+  margin: 8px 0;
+}
+
+.info {
+  font-size: 1.6rem;
+  color: #ccc;
+}
+
+#noAlertContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  opacity: 0.9;
+}
+
+#noAlertContainer img {
+  width: 250px;
+  margin-bottom: 25px;
+  filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.8));
+}
+
+#noAlertContainer h2 {
+  color: #eee;
+  font-size: 2.4rem;
+  letter-spacing: 1px;
+  text-shadow: 0 0 15px rgba(255,255,255,0.4);
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+#status {
+  position: fixed;
+  bottom: 10px;
+  right: 15px;
+  font-size: 1rem;
+  color: #fff;
+  opacity: 0.8;
+  font-family: Arial, sans-serif;
+}
+
+audio {
+  display: none;
+}
