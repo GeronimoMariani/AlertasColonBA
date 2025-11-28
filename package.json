@@ -1,6 +1,6 @@
 {
   "name": "alertas-colon-ba",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Sistema de alertas para bomberos de Colón, Buenos Aires.",
   "main": "main.js",
   "author": "Cuartel de Bomberos Voluntarios de Colón BA",
@@ -31,7 +31,8 @@
       {
         "provider": "github",
         "owner": "GeronimoMariani",
-        "repo": "AlertasColonBA"
+        "repo": "AlertasColonBA",
+        "url": "https://alertascolonba.onrender.com/"
       }
     ],
     "files": [
