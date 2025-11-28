@@ -1,10 +1,18 @@
 const path = require("path");
-const { app, BrowserWindow } = require("electron");
+// Asegúrate de importar 'Menu' y 'app' aquí.
+const { app, BrowserWindow, Menu } = require("electron");
 const { autoUpdater } = require("electron-updater");
 const { spawn } = require("child_process");
 
+// Opcional: Instalar 'electron-log' (npm install electron-log) para mejor depuración.
+// const log = require("electron-log");
+
 let mainWindow;
 let serverProcess;
+
+// Opcional: Configurar el logger
+// autoUpdater.logger = log;
+// autoUpdater.logger.transports.file.level = "info";
 
 // 🧠 Auto-updater configuración
 autoUpdater.autoDownload = true;
@@ -43,6 +51,33 @@ function createWindow() {
   });
 }
 
+// Función para crear y establecer el menú personalizado
+function setupMenu() {
+    const template = [
+        {
+            label: 'Ayuda',
+            submenu: [
+                {
+                    label: 'Verificar Actualizaciones',
+                    click: () => {
+                        autoUpdater.checkForUpdatesAndNotify();
+                        console.log("Iniciando verificación manual de actualizaciones...");
+                    }
+                },
+                { type: 'separator' },
+                {
+                    label: `Acerca de (v${app.getVersion()})`,
+                    enabled: false // Muestra la versión actual en el menú pero desactiva el clic
+                }
+            ]
+        }
+    ];
+
+    const menu = Menu.buildFromTemplate(template);
+    Menu.setApplicationMenu(menu);
+}
+
+
 // 🚀 Iniciar el servidor Node (server.js)
 function startServer() {
   const serverPath = path.join(__dirname, "server.js");
@@ -65,8 +100,9 @@ app.on("before-quit", () => {
   }
 });
 
-// 🚀 Inicialización
+// 🚀 Inicialización (Modificado para incluir setupMenu)
 app.whenReady().then(() => {
+  setupMenu(); // <-- Se llama aquí para crear el menú
   startServer();
   setTimeout(createWindow, 2000); // esperamos que el server arranque
   autoUpdater.checkForUpdatesAndNotify();
@@ -79,3 +115,4 @@ app.on("window-all-closed", () => {
 app.on("activate", () => {
   if (mainWindow === null) createWindow();
 });
+
