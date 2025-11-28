@@ -32,26 +32,26 @@
       <select id="tipo" required>
         <option value="Incendio">Incendio</option>
         <option value="Forestal">Forestal</option>
-        <option value="Accidente">Accidente</option>
+        <option value="Accidente Vehicular">Accidente Vehicular</option>
         <option value="Rescate">Rescate</option>
         <option value="Materiales Peligrosos">Materiales Peligrosos</option>
       </select>
 
       <label>Dirección:</label>
-      <input type="text" id="direccion" placeholder="Ej: Calle 25 y Moreno" required />
+      <input type="text" id="direccion" placeholder="Ej: Calle 24 entre 49 y 50" required />
 
       <label>Descripción:</label>
       <textarea id="descripcion" rows="3" placeholder="Detalles del siniestro"></textarea>
 
       <label>Despachado por:</label>
       <select id="despachadoPor" required>
-        <option value="CUARTEL 60">CUARTEL 60</option>
-        <option value="POLICÍA">POLICÍA</option>
         <option value="GUM">GUM</option>
+        <option value="POLICÍA">POLICÍA</option>
+        <option value="CUARTEL 60">CUARTEL 60</option>
       </select>
 
       <label>Contacto:</label>
-      <input type="text" id="contacto" placeholder="Ej: Interno 23 o Teléfono" />
+      <input type="text" id="contacto" placeholder="Numero de la victima" />
 
       <button type="submit" id="sendBtn">🚨 ENVIAR ALERTA</button>
       <div id="loading">📡 Enviando alerta<span>...</span></div>

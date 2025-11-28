@@ -100,7 +100,7 @@ io.on("connection", (socket) => {
     alertTimeout = setTimeout(() => {
       lastAlert = null;
       io.emit("clearAlert");
-    }, 10 * 60 * 1000);
+    }, 30 * 60 * 1000);
   });
 
   socket.on("clearAlertManual", () => {
