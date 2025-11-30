@@ -20,11 +20,24 @@
 
     <div class="button-section">
       <a href="visor.html" class="btn">🚒 Ingresar al Visor</a>
+      
+      <!-- Nuevo contenedor para la descarga de la App de Escritorio -->
+      <div id="app-download-section">
+        <a id="download-link" href="#" class="btn secondary-btn" style="display:none;">
+            ⬇️ Descargar App Escritorio v<span id="app-version-text">...</span>
+        </a>
+        <p id="loading-text">Verificando última versión...</p>
+      </div>
     </div>
 
     <footer>
       <p>Acceso restringido al panel de despacho</p>
     </footer>
   </div>
+
+  <!-- AHORA CARGAS EL SCRIPT EXTERNO AQUÍ -->
+  <script src="js/index.js"></script>
+
 </body>
 </html>
+

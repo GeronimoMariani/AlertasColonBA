@@ -3,21 +3,38 @@ const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
 const axios = require("axios");
+const fs = require("fs"); // Importamos 'fs' para leer archivos
 require('dotenv').config();
-
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+// --- Lógica para obtener la versión del package.json ---
+const packageJsonPath = path.join(__dirname, 'package.json');
+const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+const currentAppVersion = packageJson.version;
+// ----------------------------------------------------
+
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
+
+// Nueva ruta API para obtener la versión actual de la aplicación
+app.get('/api/version', (req, res) => {
+    res.json({
+        version: currentAppVersion,
+        // Puedes añadir una URL de descarga fija aquí si lo necesitas:
+        // downloadUrl: "URL_A_TU_INSTALADOR_EN_GITHUB_O_SIMILAR"
+    });
+});
+
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 app.post("/check-password", (req, res) => {
+// ... (resto del código de check-password) ...
   const { password } = req.body;
   if (password === process.env.SENDER_PASSWORD) {
     res.json({ success: true });
@@ -29,9 +46,11 @@ app.post("/check-password", (req, res) => {
 
 let lastAlert = null;
 let alertTimeout = null;
-let alertHistory = []; // 🔥 Guardamos historial de alertas
+let alertHistory = []; 
 
 io.on("connection", (socket) => {
+// ... (resto del código io.on connection, including enviarWhatsApp function) ...
+
   console.log("Nuevo visor conectado");
 
   async function enviarWhatsApp(alerta) {
@@ -71,6 +90,7 @@ io.on("connection", (socket) => {
   socket.emit("history", alertHistory);
 
   socket.on("sendAlert", (data) => {
+// ... (resto del código sendAlert, clearAlertManual, etc.) ...
     console.log("Nueva alerta recibida:", data);
 
     const now = new Date();
@@ -111,6 +131,7 @@ io.on("connection", (socket) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
+
 
 
 

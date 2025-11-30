@@ -9,6 +9,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  position: relative; /* Añadido para posicionar el botón superior derecho */
 }
 
 /* --- Contenedor principal --- */
@@ -42,7 +43,7 @@ body {
   margin-bottom: 30px;
 }
 
-/* --- Botón --- */
+/* --- Botón General --- */
 .btn {
   background-color: #e60000;
   color: white;
@@ -52,6 +53,7 @@ body {
   border-radius: 8px;
   box-shadow: 0 0 20px #ff0000aa;
   transition: 0.3s;
+  display: inline-block; /* Asegura que los botones se muestren correctamente */
 }
 
 .btn:hover {
@@ -59,6 +61,38 @@ body {
   box-shadow: 0 0 30px #ff0000cc;
   transform: scale(1.05);
 }
+
+/* --- ESTILO NUEVO PARA EL BOTÓN BLANCO --- */
+.secondary-btn {
+    background-color: #ffffff; /* Fondo blanco */
+    color: #000000;             /* Texto negro */
+    box-shadow: 0 0 15px #ffffffaa; /* Sombra blanca */
+    padding: 10px 20px;         /* Un poco más pequeño */
+    font-size: 0.9rem;
+}
+
+.secondary-btn:hover {
+    background-color: #f0f0f0;
+    box-shadow: 0 0 25px #ffffffcc;
+    transform: scale(1.05);
+}
+
+/* --- POSICIONAMIENTO DEL BOTÓN DE DESCARGA (sección) --- */
+#app-download-section {
+    position: absolute; /* Posicionamiento absoluto respecto al body */
+    top: 20px;          /* Arriba */
+    right: 20px;        /* A la derecha */
+    text-align: right;
+    /* Estilos para el texto de carga o mensaje */
+    font-size: 0.8rem;
+    color: #aaa;
+}
+
+/* Oculta este texto por defecto si usas JS para mostrar/ocultar el botón */
+#app-download-section p {
+    margin: 0;
+}
+
 
 /* --- Footer --- */
 footer {
@@ -77,3 +111,4 @@ footer {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
