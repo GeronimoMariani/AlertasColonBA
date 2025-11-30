@@ -3,12 +3,19 @@ const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
 const axios = require("axios");
+const fs = require("fs");
 require('dotenv').config();
 
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+
+// --- Lógica para obtener la versión del package.json ---
+const packageJsonPath = path.join(__dirname, 'package.json');
+const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+const currentAppVersion = packageJson.version;
+// ----------------------------------------------------
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
