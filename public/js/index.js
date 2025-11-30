@@ -1,8 +1,6 @@
 // public/js/index.js
 
-// Esta URL debe coincidir con la URL base de tu servidor (render.com o localhost)
-// Como tu index.html y este JS se cargan desde el mismo servidor, puedes usar rutas relativas.
-const SERVER_URL = "https://alertascolonba.onrender.com"; // Deja esto vacío o usa "." si el servidor está en la misma raíz
+const SERVER_URL = ""; 
 
 async function checkAppVersion() {
     const loadingText = document.getElementById('loading-text');
@@ -10,19 +8,11 @@ async function checkAppVersion() {
     const versionText = document.getElementById('app-version-text');
     
     try {
-        // Llama a la nueva ruta API en tu servidor Express
         const response = await fetch(`${SERVER_URL}/api/version`); 
         const data = await response.json();
         const latestVersion = data.version;
 
         versionText.textContent = latestVersion;
-        
-        // Construye el nombre del archivo de instalación basado en la versión
-        // ESTA URL ASUME QUE PUBLICAS EN GITHUB RELEASES
-        // RECUERDA REEMPLAZAR TU_USUARIO/TU_REPOSITORIO/NombreDeTuApp
-        const downloadUrl = `github.com${latestVersion}.exe`;
-        
-        downloadLink.href = downloadUrl;
         
         loadingText.style.display = 'none';
         downloadLink.style.display = 'inline-block';
@@ -33,5 +23,23 @@ async function checkAppVersion() {
     }
 }
 
+// Manejador de clic universal (funciona en web y Electron)
+document.getElementById('download-link').addEventListener('click', (event) => {
+    event.preventDefault(); // Previene la navegación estándar del navegador
+
+    const version = document.getElementById('app-version-text').textContent;
+    // REEMPLAZA LOS NOMBRES DEL REPOSITORIO Y PRODUCTO EXACTAMENTE
+    const url = `https://github.com/GeronimoMariani/AlertasColonBA/releases/download/v${version}/Alertas-Colon-BA-Setup-${version}.exe`;
+
+    // Usamos la API expuesta por preload.js si existe (en Electron)
+    if (window.electronAPI) { 
+        window.electronAPI.openExternal(url);
+    } else {
+        // Si estamos en un navegador web normal
+        window.open(url, '_blank');
+    }
+});
+
 // Ejecutar la verificación al cargar la página
 checkAppVersion();
+

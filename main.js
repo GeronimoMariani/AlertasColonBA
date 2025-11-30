@@ -1,16 +1,13 @@
 const path = require("path");
-// Asegúrate de importar 'Menu' y 'app' aquí.
-const { app, BrowserWindow, Menu } = require("electron");
+const { app, BrowserWindow, Menu, ipcMain } = require("electron"); // Importamos Menu, ipcMain
 const { autoUpdater } = require("electron-updater");
 const { spawn } = require("child_process");
-
-// Opcional: Instalar 'electron-log' (npm install electron-log) para mejor depuración.
-// const log = require("electron-log");
 
 let mainWindow;
 let serverProcess;
 
-// Opcional: Configurar el logger
+// Opcional: Instalar 'electron-log' (npm install electron-log) para mejor depuración.
+// const log = require("electron-log");
 // autoUpdater.logger = log;
 // autoUpdater.logger.transports.file.level = "info";
 
@@ -39,19 +36,20 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js') // <-- Enlaza el preload script
     },
   });
 
-  // Cargar la interfaz principal
-  mainWindow.loadURL("https://alertascolonba.onrender.com");
+  // Cargar la interfaz principal (servida por Express)
+  mainWindow.loadURL("http://localhost:3000/");
 
-  // mainWindow.webContents.openDevTools(); // ← activar si querés depurar
+  // mainWindow.webContents.openDevTools(); 
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
 }
 
-// Función para crear y establecer el menú personalizado
+// Función para crear y establecer el menú personalizado (con info de versión)
 function setupMenu() {
     const template = [
         {
@@ -67,7 +65,7 @@ function setupMenu() {
                 { type: 'separator' },
                 {
                     label: `Acerca de (v${app.getVersion()})`,
-                    enabled: false // Muestra la versión actual en el menú pero desactiva el clic
+                    enabled: false 
                 }
             ]
         }
@@ -77,9 +75,12 @@ function setupMenu() {
     Menu.setApplicationMenu(menu);
 }
 
-
 // 🚀 Iniciar el servidor Node (server.js)
 function startServer() {
+  // Asumimos que no necesitas ejecutar el server.js localmente si la URL de render.com está activa
+  console.log("Usando URL remota: https://alertascolonba.onrender.com");
+  // Si aún necesitas ejecutar el servidor local, descomenta las siguientes líneas:
+
   const serverPath = path.join(__dirname, "server.js");
   console.log("🟢 Iniciando servidor:", serverPath);
 
@@ -100,11 +101,11 @@ app.on("before-quit", () => {
   }
 });
 
-// 🚀 Inicialización (Modificado para incluir setupMenu)
+// 🚀 Inicialización
 app.whenReady().then(() => {
-  setupMenu(); // <-- Se llama aquí para crear el menú
+  setupMenu();
   startServer();
-  setTimeout(createWindow, 2000); // esperamos que el server arranque
+  setTimeout(createWindow, 2000); 
   autoUpdater.checkForUpdatesAndNotify();
 });
 
@@ -115,4 +116,5 @@ app.on("window-all-closed", () => {
 app.on("activate", () => {
   if (mainWindow === null) createWindow();
 });
+
 

@@ -1,6 +1,6 @@
 {
   "name": "alertas-colon-ba",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Sistema de alertas para bomberos de Colón, Buenos Aires.",
   "main": "main.js",
   "author": "Cuartel de Bomberos Voluntarios de Colón BA",
@@ -15,6 +15,7 @@
   "dependencies": {
     "axios": "^1.7.7",
     "dotenv": "^17.2.3",
+    "electron-log": "^5.4.3",
     "electron-updater": "^6.3.4",
     "express": "^4.19.2",
     "firebase-admin": "^12.6.0",

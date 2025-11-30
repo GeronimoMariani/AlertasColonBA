@@ -23,8 +23,6 @@ app.use(express.json());
 app.get('/api/version', (req, res) => {
     res.json({
         version: currentAppVersion,
-        // Puedes añadir una URL de descarga fija aquí si lo necesitas:
-        // downloadUrl: "URL_A_TU_INSTALADOR_EN_GITHUB_O_SIMILAR"
     });
 });
 
