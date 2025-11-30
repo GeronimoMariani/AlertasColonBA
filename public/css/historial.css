@@ -1,0 +1,85 @@
+/* public/css/historial.css */
+
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background-color: #fff;
+  color: #111;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  margin: 0;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1000px;
+  margin-bottom: 30px;
+}
+
+header img {
+  width: 100px;
+}
+
+h1 {
+  color: red;
+  font-size: 2rem;
+  margin: 0;
+  text-align: center;
+  width: 100%;
+}
+
+#alertasContainer {
+  width: 100%;
+  max-width: 1000px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.alert-card {
+  border: 2px solid red;
+  border-radius: 10px;
+  padding: 15px;
+  background-color: #fff5f5;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.alert-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  color: #b30000;
+  font-size: 1.2rem;
+}
+
+.alert-body {
+  margin-top: 10px;
+  line-height: 1.5;
+}
+
+.alert-footer {
+  margin-top: 10px;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+a.volver {
+  display: inline-block;
+  background: red;
+  color: white;
+  text-decoration: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  margin-top: 20px;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+a.volver:hover {
+  background: darkred;
+}
