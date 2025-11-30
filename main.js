@@ -41,7 +41,7 @@ function createWindow() {
   });
 
   // Cargar la interfaz principal (servida por Express)
-  mainWindow.loadURL("http://localhost:3000/");
+  mainWindow.loadURL("https://alertascolonba.onrender.com");
 
   // mainWindow.webContents.openDevTools(); 
   mainWindow.on("closed", () => {
