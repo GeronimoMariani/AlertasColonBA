@@ -7,9 +7,9 @@ let mainWindow;
 let serverProcess;
 
 // Opcional: Instalar 'electron-log' (npm install electron-log) para mejor depuración.
-// const log = require("electron-log");
-// autoUpdater.logger = log;
-// autoUpdater.logger.transports.file.level = "info";
+const log = require("electron-log");
+autoUpdater.logger = log;
+autoUpdater.logger.transports.file.level = "info";
 
 // 🧠 Auto-updater configuración
 autoUpdater.autoDownload = true;
