@@ -1,6 +1,6 @@
 {
   "name": "alertas-colon-ba",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "description": "Sistema de alertas para bomberos de Colón, Buenos Aires.",
   "main": "main.js",
   "author": "Cuartel de Bomberos Voluntarios de Colón BA",
