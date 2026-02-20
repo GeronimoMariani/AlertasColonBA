@@ -1,4 +1,4 @@
-const socket = io("https://alertascolonba.onrender.com", {
+const socket = io("https://alertascolonba.onrender.com/", {
   reconnection: true,
   reconnectionAttempts: Infinity,
   reconnectionDelay: 2000,
@@ -38,8 +38,8 @@ socket.on("alert", (data) => {
   playSirena();
   container.innerHTML = `
     <h1>${data.tipo.toUpperCase()}</h1>
-    <h2>${data.direccion}</h2>
-    <p>${data.descripcion || ""}</p>
+    <h2>CALLE: ${data.direccion}</h2>
+    <p>Descripcion: ${data.descripcion || ""}</p>
     <p class="info">Despachado por: ${data.despachadoPor}</p>
     <p class="info">Contacto: ${data.contacto || "—"}</p>
     <p class="info">Hora: ${data.timestamp}</p>

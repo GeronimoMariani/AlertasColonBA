@@ -1,6 +1,4 @@
-import { guardarAlertaFirebase } from "./firebase.js";
-
-const socket = io("https://alertascolonba.onrender.com", {
+const socket = io("https://alertascolonba.onrender.com/", {
   reconnection: true,
   reconnectionAttempts: Infinity,
   reconnectionDelay: 2000,
@@ -55,7 +53,6 @@ document.getElementById("alertForm").addEventListener("submit", (e) => {
   };
 
   socket.emit("sendAlert", data);
-  guardarAlertaFirebase(data);
 
   setTimeout(() => {
     btn.disabled = false;
