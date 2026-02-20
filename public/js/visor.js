@@ -1,4 +1,8 @@
-const socket = io("https://alertascolonba.onrender.com/", {
+const SERVER_URL = window.location.hostname === "localhost" 
+  ? "http://localhost:3000" 
+  : "https://alertascolonba.onrender.com";
+
+const socket = io(SERVER_URL, {
   reconnection: true,
   reconnectionAttempts: Infinity,
   reconnectionDelay: 2000,

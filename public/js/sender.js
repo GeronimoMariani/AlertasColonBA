@@ -1,9 +1,21 @@
-const socket = io("https://alertascolonba.onrender.com/", {
+const SERVER_URL = window.location.hostname === "localhost" 
+  ? "http://localhost:3000" 
+  : "https://alertascolonba.onrender.com";
+
+const socket = io(SERVER_URL, {
   reconnection: true,
   reconnectionAttempts: Infinity,
   reconnectionDelay: 2000,
   reconnectionDelayMax: 5000,
   timeout: 10000,
+});
+
+// Verificar si ya está autenticado al cargar la página
+window.addEventListener("load", () => {
+  if (sessionStorage.getItem("authenticated") === "true") {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("main").style.display = "block";
+  }
 });
 
 function updateDateTime() {
