@@ -1,0 +1,182 @@
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background-color: #ffffff;
+  color: #111;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100vh;
+  margin: 0;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* --- Login admin --- */
+#loginAdmin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-top: 60px;
+  width: 100%;
+  max-width: 400px;
+}
+
+#loginAdmin img {
+  width: 120px;
+  margin-bottom: 20px;
+}
+
+#loginAdmin h1 {
+  color: red;
+  font-size: 2rem;
+  margin: 0 0 10px 0;
+}
+
+#loginAdmin p {
+  color: #555;
+  margin-bottom: 20px;
+}
+
+/* --- Panel --- */
+#panelAdmin {
+  width: 100%;
+  max-width: 900px;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 30px;
+}
+
+header img {
+  width: 80px;
+}
+
+header h1 {
+  color: red;
+  font-size: 1.8rem;
+  margin: 0;
+}
+
+section {
+  margin-bottom: 30px;
+}
+
+h2 {
+  font-size: 1.3rem;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 8px;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+/* --- Tarjeta de usuario --- */
+.usuario-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  background: #fafafa;
+}
+
+.usuario-card .nombre {
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.usuario-card .acciones {
+  display: flex;
+  gap: 8px;
+}
+
+/* --- Inputs y botones generales --- */
+input {
+  font-size: 1.1rem;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+}
+
+input:focus {
+  outline: none;
+  border-color: red;
+}
+
+button {
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.btn-aprobar {
+  background-color: #28a745;
+  color: white;
+}
+
+.btn-aprobar:hover {
+  background-color: #1e7e34;
+}
+
+.btn-rechazar {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-rechazar:hover {
+  background-color: #a71d2a;
+}
+
+.btn-eliminar {
+  background-color: #555;
+  color: white;
+}
+
+.btn-eliminar:hover {
+  background-color: #333;
+}
+
+.btn-primary {
+  background-color: red;
+  color: white;
+  width: 100%;
+  font-size: 1.1rem;
+  padding: 13px;
+  margin-top: 5px;
+}
+
+.btn-primary:hover {
+  background-color: darkred;
+}
+
+.volver {
+  display: inline-block;
+  color: #555;
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: 0.2s;
+}
+
+.volver:hover {
+  color: red;
+}
+
+.empty-msg {
+  color: #aaa;
+  font-style: italic;
+  font-size: 0.95rem;
+}

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel Admin - Bomberos Voluntarios de Colón</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body>
+
+  <!-- Login admin -->
+  <div id="loginAdmin">
+    <img src="logo.png" alt="Logo Bomberos" />
+    <h1>Panel Administrador</h1>
+    <p>Ingresá la contraseña de administrador</p>
+    <input type="text" id="adminUser" placeholder="Usuario (email)" autocomplete="off" />
+    <input type="password" id="adminPass" placeholder="Contraseña" />
+    <button id="loginAdminBtn">Ingresar</button>
+    <a href="sender.html" class="volver">⬅ Volver</a>
+  </div>
+
+  <!-- Panel principal -->
+  <div id="panelAdmin" style="display:none;">
+    <header>
+      <img src="logo.png" alt="Logo Bomberos" />
+      <h1>Panel de Administración</h1>
+      <button id="cerrarSesionAdminBtn">🚪 Cerrar sesión</button>
+      <a href="sender.html" class="volver">⬅ Volver</a>
+    </header>
+
+    <section>
+      <h2>🕐 Solicitudes pendientes</h2>
+      <div id="pendientes">Cargando...</div>
+    </section>
+
+    <section>
+      <h2>✅ Usuarios aprobados</h2>
+      <div id="aprobados">Cargando...</div>
+    </section>
+
+    <section>
+      <h2>❌ Usuarios rechazados</h2>
+      <div id="rechazados">Cargando...</div>
+    </section>
+  </div>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>

@@ -1,5 +1,5 @@
-const SERVER_URL = window.location.hostname === "localhost" 
-  ? "http://localhost:3000" 
+const SERVER_URL = window.location.hostname === "localhost"
+  ? "http://localhost:3000"
   : "https://alertascolonba.onrender.com";
 
 const socket = io(SERVER_URL, {
@@ -12,42 +12,76 @@ const socket = io(SERVER_URL, {
 
 // Verificar si ya está autenticado al cargar la página
 window.addEventListener("load", () => {
-  if (sessionStorage.getItem("authenticated") === "true") {
-    document.getElementById("login").style.display = "none";
-    document.getElementById("main").style.display = "block";
+  const usuario = sessionStorage.getItem("usuarioLogueado");
+  if (usuario) {
+    mostrarPanel();
   }
 });
 
+function cerrarSesion() {
+  sessionStorage.removeItem("usuarioLogueado");
+  document.getElementById("main").style.display = "none";
+  document.getElementById("login").style.display = "flex";
+  document.getElementById("usuarioInput").value = "";
+  document.getElementById("passwordInput").value = "";
+}
+
 function updateDateTime() {
   const now = new Date();
-  const options = { timeZone: "America/Argentina/Buenos_Aires", hour: "2-digit", minute: "2-digit" };
-  const hora = now.toLocaleTimeString("es-AR", options);
-  const fecha = now.toLocaleDateString("es-AR");
-  document.getElementById("datetime").textContent = `${fecha} — ${hora}`;
+  const options = { 
+    timeZone: "America/Argentina/Buenos_Aires", 
+    hour: "2-digit", 
+    minute: "2-digit",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  };
+  document.getElementById("datetime").textContent = now.toLocaleString("es-AR", options);
 }
 
-// sender.js
-document.getElementById("ingresarBtn").addEventListener("click", checkPassword);
-
-function checkPassword() {
-  const pass = document.getElementById("passwordInput").value;
-
-  fetch("/check-password", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ password: pass })
-  })
-    .then(res => {
-      if (res.ok) {
-        sessionStorage.setItem("authenticated", "true");
-        document.getElementById("login").style.display = "none";
-        document.getElementById("main").style.display = "block";
-      } else {
-        alert("Contraseña incorrecta");
-      }
-    })
-    .catch(() => alert("Error al conectar con el servidor"));
+function mostrarPanel() {
+  document.getElementById("login").style.display = "none";
+  document.getElementById("main").style.display = "block";
+  setInterval(updateDateTime, 1000);
+  updateDateTime();
 }
+
+document.getElementById("ingresarBtn").addEventListener("click", loginUsuario);
+
+document.getElementById("passwordInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") loginUsuario();
+});
+
+async function loginUsuario() {
+  const usuario = document.getElementById("usuarioInput").value.trim();
+  const password = document.getElementById("passwordInput").value;
+
+  if (!usuario || !password) {
+    alert("Completá usuario y contraseña.");
+    return;
+  }
+
+  try {
+    const res = await fetch("/login-usuario", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ usuario, password })
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      sessionStorage.setItem("usuarioLogueado", data.usuario);
+      mostrarPanel();
+    } else {
+      alert(`❌ ${data.message || "Error al iniciar sesión."}`);
+    }
+  } catch (e) {
+    alert("Error al conectar con el servidor.");
+  }
+}
+
+document.getElementById("cerrarSesionBtn").addEventListener("click", cerrarSesion);
 
 document.getElementById("alertForm").addEventListener("submit", (e) => {
   e.preventDefault();
@@ -56,12 +90,15 @@ document.getElementById("alertForm").addEventListener("submit", (e) => {
   btn.disabled = true;
   loading.style.display = "block";
 
+  const usuarioLogueado = sessionStorage.getItem("usuarioLogueado");
+
   const data = {
     tipo: document.getElementById("tipo").value,
     direccion: document.getElementById("direccion").value,
     descripcion: document.getElementById("descripcion").value.toUpperCase(),
     despachadoPor: document.getElementById("despachadoPor").value,
     contacto: document.getElementById("contacto").value,
+    enviadoPor: usuarioLogueado, // usuario de la cuenta, campo nuevo
   };
 
   socket.emit("sendAlert", data);
@@ -90,7 +127,6 @@ function showMessage(text, type = "info") {
   msg.style.boxShadow = "0 0 10px rgba(0,0,0,0.3)";
   msg.style.opacity = "0";
   msg.style.transition = "opacity 0.3s ease";
-
   document.body.appendChild(msg);
   setTimeout(() => (msg.style.opacity = "1"), 10);
   setTimeout(() => {

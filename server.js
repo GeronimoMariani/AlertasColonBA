@@ -6,6 +6,7 @@ const axios = require("axios");
 const fs = require("fs");
 const rateLimit = require("express-rate-limit");
 const admin = require("firebase-admin");
+const bcrypt = require("bcrypt");
 require('dotenv').config();
 
 // Inicializar Firebase Admin
@@ -52,6 +53,78 @@ app.post("/check-password", loginLimiter, (req, res) => {
 
 let lastAlert = null;
 let alertTimeout = null;
+
+// Registro de nuevo usuario (queda pendiente)
+app.post("/registro-usuario", async (req, res) => {
+  console.log("Body recibido:", req.body);
+  const { usuario, password, nombre, apellido } = req.body;
+  try {
+    const doc = await db.collection("usuarios").doc(usuario).get();
+    if (doc.exists) return res.status(400).json({ success: false, message: "El usuario ya existe" });
+    
+    const hash = await bcrypt.hash(password, 10);
+    await db.collection("usuarios").doc(usuario).set({
+    usuario,
+    nombre,
+    apellido,
+    password: hash,
+    rol: "despachador",
+    estado: "pendiente"
+  });
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ success: false, message: "Error al registrar usuario" });
+  }
+});
+
+// Login de usuario despachador
+app.post("/login-usuario", loginLimiter, async (req, res) => {
+  const { usuario, password } = req.body;
+  try {
+    const doc = await db.collection("usuarios").doc(usuario).get();
+    if (!doc.exists) return res.status(401).json({ success: false, message: "Usuario incorrecto" });
+    const data = doc.data();
+    if (data.estado !== "aprobado") return res.status(403).json({ success: false, message: "Usuario pendiente de aprobación" });
+    const match = await bcrypt.compare(password, data.password);
+    if (!match) return res.status(401).json({ success: false, message: "Contraseña incorrecta" });
+    res.json({ success: true, usuario: data.usuario, rol: data.rol });
+  } catch (e) {
+    res.status(500).json({ success: false, message: "Error del servidor" });
+  }
+});
+
+// Listar usuarios (para el panel admin)
+app.get("/listar-usuarios", async (req, res) => {
+  try {
+    const snapshot = await db.collection("usuarios").get();
+    const usuarios = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), password: "***" }));
+    res.json(usuarios);
+  } catch (e) {
+    res.status(500).json({ error: "Error al listar usuarios" });
+  }
+});
+
+// Aprobar o rechazar usuario
+app.post("/gestionar-usuario", async (req, res) => {
+  const { usuario, estado } = req.body; // estado: "aprobado" o "rechazado"
+  try {
+    await db.collection("usuarios").doc(usuario).update({ estado });
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ success: false, message: "Error al gestionar usuario" });
+  }
+});
+
+// Eliminar usuario
+app.delete("/eliminar-usuario/:usuario", async (req, res) => {
+  const { usuario } = req.params;
+  try {
+    await db.collection("usuarios").doc(usuario).delete();
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ success: false, message: "Error al eliminar usuario" });
+  }
+});
 
 async function guardarAlertaFirebase(alerta) {
   try {

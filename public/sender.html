@@ -7,22 +7,26 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <link rel="stylesheet" href="css/sender.css" />
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-  <script type="module" src="js/firebase.js"></script>
 </head>
 
 <body>
+  <!-- Login -->
   <div id="login">
     <img src="logo.png" alt="Logo Bomberos" />
     <h1>Acceso al Sistema</h1>
-    <p>Ingrese la contraseña para acceder al envío de alertas</p>
+    <p>Ingresá tu usuario y contraseña</p>
+    <input type="text" id="usuarioInput" placeholder="Usuario" autocomplete="off" />
     <input type="password" id="passwordInput" placeholder="Contraseña" />
     <button id="ingresarBtn">Ingresar</button>
+    <a href="registro.html" class="registro-link">¿No tenés cuenta? Solicitá acceso</a>
   </div>
 
+  <!-- Panel principal -->
   <div id="main" style="display:none;">
     <header>
       <img src="logo.png" alt="Logo Bomberos" />
       <div id="datetime"></div>
+      <button id="cerrarSesionBtn">🚪 Cerrar sesión</button>
     </header>
 
     <h1>Enviar Alerta</h1>
@@ -57,7 +61,7 @@
       <div id="loading">📡 Enviando alerta<span>...</span></div>
     </form>
 
-    <div style="margin-top:30px; width:100%; max-width:800px; text-align:left;">
+    <div style="margin-top:30px; width:100%; max-width:800px; text-align:left; display:flex; gap:12px;">
       <a href="historial.html" id="verHistorialBtn">📜 Ver historial de alertas</a>
     </div>
   </div>

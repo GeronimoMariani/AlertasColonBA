@@ -1,5 +1,3 @@
-// public/js/historial.js (Completo y Arreglado)
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getFirestore, collection, getDocs, orderBy, query } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
@@ -20,7 +18,6 @@ const contenedor = document.getElementById("alertasContainer");
 
 async function cargarAlertas() {
     try {
-        // Consultar la colección "alertas" y ordenarlas por timestamp descendente
         const q = query(collection(db, "alertas"), orderBy("timestamp", "desc"));
         const querySnapshot = await getDocs(q);
 
@@ -35,10 +32,7 @@ async function cargarAlertas() {
             const card = document.createElement("div");
             card.className = "alert-card";
 
-            // Formatear la fecha correctamente, manejando timestamp de Firebase o cadena de texto
             const timestampDate = new Date(data.timestamp?.toDate?.() || data.timestamp);
-            
-            // --- ARREGLADO: Formato con AM/PM ---
             const formattedDate = timestampDate.toLocaleString("es-AR", {
                 year: 'numeric',
                 month: '2-digit',
@@ -46,10 +40,9 @@ async function cargarAlertas() {
                 hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit',
-                hour12: true, // Muestra AM/PM
-                timeZone: "America/Argentina/Buenos_Aires" 
+                hour12: true,
+                timeZone: "America/Argentina/Buenos_Aires"
             });
-            // ------------------------------------
 
             card.innerHTML = `
                 <div class="alert-header">
@@ -61,6 +54,7 @@ async function cargarAlertas() {
                     <p><strong>Descripción:</strong> ${data.descripcion}</p>
                     <p><strong>Despachado por:</strong> ${data.despachadoPor}</p>
                     <p><strong>Contacto:</strong> ${data.contacto || "N/A"}</p>
+                    ${data.enviadoPor ? `<p><strong>Cuenta que envió:</strong> ${data.enviadoPor}</p>` : ""}
                 </div>
             `;
             contenedor.appendChild(card);
@@ -71,6 +65,5 @@ async function cargarAlertas() {
     }
 }
 
-// Cargar las alertas al iniciar la página
 cargarAlertas();
 

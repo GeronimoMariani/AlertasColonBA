@@ -140,3 +140,40 @@ button:disabled {
 #verHistorialBtn:hover {
   background-color: #333;
 }
+
+.registro-link {
+  display: inline-block;
+  margin-top: 12px;
+  color: #555;
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: 0.2s;
+}
+
+.registro-link:hover {
+  color: red;
+}
+
+#cerrarSesionBtn {
+  background-color: #555;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+#cerrarSesionBtn:hover {
+  background-color: #333;
+}
+
+#datetime {
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: #444;
+  flex: 1;
+}
