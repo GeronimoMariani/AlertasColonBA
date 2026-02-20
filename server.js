@@ -6,7 +6,7 @@ const axios = require("axios");
 const fs = require("fs");
 const rateLimit = require("express-rate-limit");
 const admin = require("firebase-admin");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 require('dotenv').config();
 
 // Inicializar Firebase Admin
