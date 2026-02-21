@@ -42,6 +42,23 @@ app.get('/api/version', (req, res) => {
   res.json({ version: currentAppVersion });
 });
 
+app.get("/privacidad", (req, res) => {
+  res.send(`
+    <h1>Política de Privacidad</h1>
+    <p>Este sistema es de uso exclusivo del Cuartel de Bomberos Voluntarios de Colón BA.</p>
+    <p>Los datos recopilados (nombre, apellido, correo electrónico) se usan únicamente para autenticar a los despachadores autorizados.</p>
+    <p>No se comparte información con terceros.</p>
+  `);
+});
+
+app.get("/eliminar-datos", (req, res) => {
+  res.send(`
+    <h1>Eliminación de datos</h1>
+    <p>Para solicitar la eliminación de tus datos del sistema de alertas del Cuartel de Bomberos Voluntarios de Colón BA, enviá un correo a geronimomariani5@gmail.com indicando tu nombre de usuario.</p>
+    <p>Tu cuenta será eliminada en un plazo de 48 horas.</p>
+  `);
+});
+
 app.post("/check-password", loginLimiter, (req, res) => {
   const { password } = req.body;
   if (password === process.env.SENDER_PASSWORD) {
@@ -150,8 +167,9 @@ async function guardarAlertaFirebase(alerta) {
 }
 
 async function enviarWhatsApp(alerta) {
-  try {
-    const mensaje = `🚨 *NUEVA ALERTA* 🚨
+  const numeros = process.env.WHATSAPP_NUMEROS.split(",");
+  
+  const mensaje = `🚨 *NUEVA ALERTA* 🚨
 Tipo: ${alerta.tipo.toUpperCase()}
 Dirección: ${alerta.direccion}
 Descripción: ${alerta.descripcion}
@@ -159,24 +177,27 @@ Despachado por: ${alerta.despachadoPor}
 Contacto: ${alerta.contacto}
 Hora: ${alerta.timestamp}`;
 
-    await axios.post(
-      `https://graph.facebook.com/v22.0/${process.env.WHATSAPP_PHONE_ID}/messages`,
-      {
-        messaging_product: "whatsapp",
-        to: process.env.WHATSAPP_NUMBER_DESTINO,
-        type: "text",
-        text: { body: mensaje },
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
-          "Content-Type": "application/json",
+  for (const numero of numeros) {
+    try {
+      await axios.post(
+        `https://graph.facebook.com/v22.0/${process.env.WHATSAPP_PHONE_ID}/messages`,
+        {
+          messaging_product: "whatsapp",
+          to: numero.trim(),
+          type: "text",
+          text: { body: mensaje },
         },
-      }
-    );
-    console.log("✅ Mensaje de WhatsApp enviado");
-  } catch (error) {
-    console.error("❌ Error al enviar WhatsApp:", error.response?.data || error.message);
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log(`✅ WhatsApp enviado a ${numero}`);
+    } catch (error) {
+      console.error(`❌ Error al enviar a ${numero}:`, error.response?.data || error.message);
+    }
   }
 }
 
