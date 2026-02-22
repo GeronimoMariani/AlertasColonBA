@@ -248,7 +248,7 @@ io.on("connection", async (socket) => {
     const historial = snapshot.docs.map(doc => doc.data());
     io.emit("history", historial);
 
-    enviarWhatsApp(lastAlert);
+    // enviarWhatsApp(lastAlert);
 
     if (alertTimeout) clearTimeout(alertTimeout);
     alertTimeout = setTimeout(() => {
