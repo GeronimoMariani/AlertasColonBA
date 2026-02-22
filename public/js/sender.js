@@ -12,14 +12,14 @@ const socket = io(SERVER_URL, {
 
 // Verificar si ya está autenticado al cargar la página
 window.addEventListener("load", () => {
-  const usuario = sessionStorage.getItem("usuarioLogueado");
+  const usuario = localStorage.getItem("usuarioLogueado");
   if (usuario) {
     mostrarPanel();
   }
 });
 
 function cerrarSesion() {
-  sessionStorage.removeItem("usuarioLogueado");
+  localStorage.removeItem("usuarioLogueado");
   document.getElementById("main").style.display = "none";
   document.getElementById("login").style.display = "flex";
   document.getElementById("login").style.flexDirection = "column";
@@ -30,9 +30,9 @@ function cerrarSesion() {
 
 function updateDateTime() {
   const now = new Date();
-  const options = { 
-    timeZone: "America/Argentina/Buenos_Aires", 
-    hour: "2-digit", 
+  const options = {
+    timeZone: "America/Argentina/Buenos_Aires",
+    hour: "2-digit",
     minute: "2-digit",
     day: "2-digit",
     month: "2-digit",
@@ -59,7 +59,7 @@ async function loginUsuario() {
   const password = document.getElementById("passwordInput").value;
 
   if (!usuario || !password) {
-    alert("Completá usuario y contraseña.");
+    showMessage("Completá usuario y contraseña.", "error");
     return;
   }
 
@@ -71,15 +71,17 @@ async function loginUsuario() {
     });
 
     const data = await res.json();
+    console.log("Respuesta del servidor:", data);
 
     if (res.ok && data.success) {
-      sessionStorage.setItem("usuarioLogueado", data.usuario);
+      console.log("Guardando en localStorage...");
+      localStorage.setItem("usuarioLogueado", data.usuario);
       mostrarPanel();
     } else {
-      alert(`❌ ${data.message || "Error al iniciar sesión."}`);
+      showMessage(`❌ ${data.message || "Error al iniciar sesión."}`, "error");
     }
   } catch (e) {
-    alert("Error al conectar con el servidor.");
+    showMessage("Error al conectar con el servidor.", "error");
   }
 }
 
@@ -92,7 +94,7 @@ document.getElementById("alertForm").addEventListener("submit", (e) => {
   btn.disabled = true;
   loading.style.display = "block";
 
-  const usuarioLogueado = sessionStorage.getItem("usuarioLogueado");
+  const usuarioLogueado = localStorage.getItem("usuarioLogueado");
 
   const data = {
     tipo: document.getElementById("tipo").value,
@@ -100,7 +102,7 @@ document.getElementById("alertForm").addEventListener("submit", (e) => {
     descripcion: document.getElementById("descripcion").value.toUpperCase(),
     despachadoPor: document.getElementById("despachadoPor").value,
     contacto: document.getElementById("contacto").value,
-    enviadoPor: usuarioLogueado, // usuario de la cuenta, campo nuevo
+    enviadoPor: usuarioLogueado,
   };
 
   socket.emit("sendAlert", data);
@@ -139,7 +141,7 @@ function showMessage(text, type = "info") {
 
 document.getElementById("olvidéBtn").addEventListener("click", async () => {
   const usuario = prompt("Ingresá tu mail para recibir el link de reseteo:");
-  
+
   if (!usuario) return;
 
   try {
@@ -152,11 +154,11 @@ document.getElementById("olvidéBtn").addEventListener("click", async () => {
     const data = await res.json();
 
     if (res.ok && data.success) {
-      alert("✅ Te enviamos un mail con el link para resetear tu contraseña.");
+      showMessage("✅ Te enviamos un mail con el link para resetear tu contraseña.", "success");
     } else {
-      alert(`❌ ${data.message || "Error al enviar el mail."}`);
+      showMessage(`❌ ${data.message || "Error al enviar el mail."}`, "error");
     }
   } catch (e) {
-    alert("Error al conectar con el servidor.");
+    showMessage("Error al conectar con el servidor.", "error");
   }
 });

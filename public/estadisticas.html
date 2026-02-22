@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Estadísticas - Bomberos Voluntarios de Colón</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="stylesheet" href="css/estadisticas.css" />
+</head>
+<body>
+  <header>
+    <img src="logo.png" alt="Logo Bomberos" />
+    <h1>Estadísticas</h1>
+  </header>
+
+  <div id="statsContainer">
+
+    <div class="stat-card">
+      <div class="stat-label">Total de alertas</div>
+      <div class="stat-value" id="totalAlertas">—</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Tipo más frecuente</div>
+      <div class="stat-value" id="tipoFrecuente">—</div>
+    </div>
+
+  </div>
+
+  <div id="mesContainer">
+    <h2>Alertas por mes</h2>
+    <div id="graficoMes"></div>
+  </div>
+
+  <div id="tiposContainer">
+    <h2>Alertas por tipo</h2>
+    <div id="graficoTipos"></div>
+  </div>
+
+  <a href="sender.html" class="volver">⬅ Volver al envío</a>
+
+  <script type="module" src="js/estadisticas.js"></script>
+</body>
+</html>

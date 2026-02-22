@@ -74,23 +74,38 @@ let alertTimeout = null;
 
 // Registro de nuevo usuario (queda pendiente)
 app.post("/registro-usuario", async (req, res) => {
-  console.log("Body recibido:", req.body);
   const { usuario, password, nombre, apellido } = req.body;
   try {
     const doc = await db.collection("usuarios").doc(usuario).get();
     if (doc.exists) return res.status(400).json({ success: false, message: "El usuario ya existe" });
-    
+
     const hash = await bcrypt.hash(password, 10);
     await db.collection("usuarios").doc(usuario).set({
-    usuario,
-    nombre,
-    apellido,
-    password: hash,
-    rol: "despachador",
-    estado: "pendiente"
-  });
+      usuario,
+      nombre,
+      apellido,
+      password: hash,
+      rol: "despachador",
+      estado: "pendiente"
+    });
+
+    // Notificar al admin por mail
+    await transporter.sendMail({
+      from: process.env.GMAIL_USER,
+      to: process.env.ADMIN_EMAIL,
+      subject: "🔔 Nueva solicitud de acceso - Bomberos Colón BA",
+      html: `
+        <h2>Nueva solicitud de acceso</h2>
+        <p><strong>Nombre:</strong> ${nombre} ${apellido}</p>
+        <p><strong>Mail:</strong> ${usuario}</p>
+        <p>Ingresá al panel de administración para aprobar o rechazar la solicitud.</p>
+        <a href="${process.env.APP_URL}/admin.html">Ir al panel</a>
+      `
+    });
+    console.log("✅ Mail de notificación enviado");
     res.json({ success: true });
   } catch (e) {
+    console.error(e);
     res.status(500).json({ success: false, message: "Error al registrar usuario" });
   }
 });
@@ -149,19 +164,9 @@ async function guardarAlertaFirebase(alerta) {
     const alertasRef = db.collection("alertas");
     await alertasRef.add({
       ...alerta,
-      timestamp: new Date().toISOString() // <-- siempre ISO para compatibilidad
+      timestamp: new Date().toISOString()
     });
     console.log("✅ Alerta guardada en Firestore");
-
-    // Mantener máximo 20 alertas
-    const snapshot = await alertasRef.orderBy("timestamp", "desc").get();
-    if (snapshot.size > 20) {
-      const excedentes = snapshot.docs.slice(20);
-      const batch = db.batch();
-      excedentes.forEach(doc => batch.delete(doc.ref));
-      await batch.commit();
-      console.log("♻️ Alertas antiguas eliminadas");
-    }
   } catch (e) {
     console.error("❌ Error al guardar en Firestore:", e);
   }

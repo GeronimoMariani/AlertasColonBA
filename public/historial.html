@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Historial de Alertas - Bomberos Voluntarios de Colón</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <!-- Enlace al CSS externo -->
   <link rel="stylesheet" href="css/historial.css"> 
 </head>
 <body>
@@ -14,13 +13,37 @@
     <h1>Historial de Alertas</h1>
   </header>
 
+  <!-- Filtros -->
+  <div id="filtros">
+    <select id="filtroTipo">
+      <option value="">Todos los tipos</option>
+      <option value="Incendio">Incendio</option>
+      <option value="Forestal">Forestal</option>
+      <option value="Accidente Vehicular">Accidente Vehicular</option>
+      <option value="Rescate">Rescate</option>
+      <option value="Materiales Peligrosos">Materiales Peligrosos</option>
+    </select>
+
+    <select id="filtroDespachadoPor">
+      <option value="">Todos los despachadores</option>
+      <option value="GUM">GUM</option>
+      <option value="POLICÍA">POLICÍA</option>
+      <option value="CUARTEL 60">CUARTEL 60</option>
+    </select>
+
+    <input type="date" id="filtroFechaDesde" placeholder="Desde" />
+    <input type="date" id="filtroFechaHasta" placeholder="Hasta" />
+
+    <button id="filtrarBtn">🔍 Filtrar</button>
+    <button id="limpiarBtn">✖ Limpiar</button>
+  </div>
+
+  <p id="resultadoCount"></p>
   <div id="alertasContainer">Cargando alertas...</div>
 
   <a href="sender.html" class="volver">⬅ Volver al envío</a>
 
-  <!-- Enlace al JavaScript externo (mantén type="module") -->
   <script type="module" src="js/historial.js"></script>
-  
 </body>
 </html>
 

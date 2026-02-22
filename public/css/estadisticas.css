@@ -1,0 +1,136 @@
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background-color: #fff;
+  color: #111;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  margin: 0;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1000px;
+  margin-bottom: 30px;
+}
+
+header img {
+  width: 100px;
+}
+
+h1 {
+  color: red;
+  font-size: 2rem;
+  margin: 0;
+  text-align: center;
+  width: 100%;
+}
+
+h2 {
+  color: #333;
+  font-size: 1.4rem;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 8px;
+  width: 100%;
+  max-width: 1000px;
+}
+
+/* --- Cards de estadísticas --- */
+#statsContainer {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+  max-width: 1000px;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+
+.stat-card {
+  flex: 1;
+  min-width: 200px;
+  border: 2px solid red;
+  border-radius: 10px;
+  padding: 20px;
+  background-color: #fff5f5;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.stat-label {
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 10px;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: red;
+}
+
+/* --- Gráficos de barras --- */
+#mesContainer,
+#tiposContainer {
+  width: 100%;
+  max-width: 1000px;
+  margin-bottom: 30px;
+}
+
+.barra-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.barra-label {
+  width: 180px;
+  font-size: 0.95rem;
+  text-align: right;
+  color: #333;
+  text-transform: capitalize;
+}
+
+.barra-wrap {
+  flex: 1;
+  background: #f0f0f0;
+  border-radius: 6px;
+  height: 28px;
+  overflow: hidden;
+}
+
+.barra {
+  height: 100%;
+  background-color: red;
+  border-radius: 6px;
+  transition: width 0.5s ease;
+  min-width: 4px;
+}
+
+.barra-valor {
+  width: 30px;
+  font-weight: bold;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+a.volver {
+  display: inline-block;
+  background: red;
+  color: white;
+  text-decoration: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  margin-top: 20px;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+a.volver:hover {
+  background: darkred;
+}
