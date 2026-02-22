@@ -72,6 +72,20 @@ app.post("/check-password", loginLimiter, (req, res) => {
 let lastAlert = null;
 let alertTimeout = null;
 
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  family: 4,
+  tls: {
+    rejectUnauthorized: false
+  },
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS,
+  },
+});
+
 // Registro de nuevo usuario (queda pendiente)
 app.post("/registro-usuario", async (req, res) => {
   const { usuario, password, nombre, apellido } = req.body;
@@ -261,17 +275,6 @@ io.on("connection", async (socket) => {
     lastAlert = null;
     io.emit("clearAlert");
   });
-});
-
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  family: 4, // fuerza IPv4
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS,
-  },
 });
 
 // Almacena tokens temporales de reseteo
