@@ -21,12 +21,6 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-const token = process.env.GH_TOKEN;
-
-if (!token) {
-  throw new Error("GH_TOKEN no está definido");
-}
-
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
