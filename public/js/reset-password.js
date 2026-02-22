@@ -1,13 +1,16 @@
-document.getElementById("registrarBtn").addEventListener("click", registrar);
+const params = new URLSearchParams(window.location.search);
+const token = params.get("token");
 
-async function registrar() {
-  const nombre = document.getElementById("nombreInput").value.trim();
-  const apellido = document.getElementById("apellidoInput").value.trim();
-  const mail = document.getElementById("mailInput").value.trim().toLowerCase();
+if (!token) {
+  showMessage("Link inválido.", "error");
+  setTimeout(() => window.location.href = "sender.html", 2000);
+}
+
+document.getElementById("resetBtn").addEventListener("click", async () => {
   const password = document.getElementById("passwordInput").value;
   const confirm = document.getElementById("confirmInput").value;
 
-  if (!nombre || !apellido || !mail || !password || !confirm) {
+  if (!password || !confirm) {
     showMessage("Completá todos los campos.", "error");
     return;
   }
@@ -23,24 +26,24 @@ async function registrar() {
   }
 
   try {
-    const res = await fetch("/registro-usuario", {
+    const res = await fetch("/reset-password", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ usuario: mail, nombre, apellido, password })
+      body: JSON.stringify({ token, password })
     });
 
     const data = await res.json();
 
     if (res.ok && data.success) {
-      showMessage("✅ Solicitud enviada. Esperá que un administrador apruebe tu acceso.", "success");
+      showMessage("✅ Contraseña actualizada correctamente.", "success");
       setTimeout(() => window.location.href = "sender.html", 2500);
     } else {
-      showMessage(`❌ ${data.message || "Error al registrar."}`, "error");
+      showMessage(`❌ ${data.message || "Error al resetear."}`, "error");
     }
   } catch (e) {
     showMessage("Error al conectar con el servidor.", "error");
   }
-}
+});
 
 function showMessage(text, type = "info") {
   const msg = document.createElement("div");

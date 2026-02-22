@@ -7,6 +7,7 @@ const fs = require("fs");
 const rateLimit = require("express-rate-limit");
 const admin = require("firebase-admin");
 const bcrypt = require("bcryptjs");
+const nodemailer = require("nodemailer");
 require('dotenv').config();
 
 // Inicializar Firebase Admin
@@ -54,7 +55,7 @@ app.get("/privacidad", (req, res) => {
 app.get("/eliminar-datos", (req, res) => {
   res.send(`
     <h1>Eliminación de datos</h1>
-    <p>Para solicitar la eliminación de tus datos del sistema de alertas del Cuartel de Bomberos Voluntarios de Colón BA, enviá un correo a geronimomariani5@gmail.com indicando tu nombre de usuario.</p>
+    <p>Para solicitar la eliminación de tus datos del sistema de alertas del Cuartel de Bomberos Voluntarios de Colón BA, enviá un correo a info@bomberosdecolon.com.ar indicando tu nombre de usuario.</p>
     <p>Tu cuenta será eliminada en un plazo de 48 horas.</p>
   `);
 });
@@ -255,6 +256,71 @@ io.on("connection", async (socket) => {
     lastAlert = null;
     io.emit("clearAlert");
   });
+});
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS,
+  },
+});
+
+// Almacena tokens temporales de reseteo
+const resetTokens = {};
+
+// Solicitar reseteo de contraseña
+app.post("/solicitar-reset", async (req, res) => {
+  const { usuario } = req.body;
+  try {
+    const doc = await db.collection("usuarios").doc(usuario).get();
+    if (!doc.exists) return res.status(404).json({ success: false, message: "Usuario no encontrado" });
+
+    const token = Math.random().toString(36).substring(2, 15);
+    resetTokens[token] = { usuario, expira: Date.now() + 30 * 60 * 1000 }; // 30 minutos
+
+    const appUrl = process.env.NODE_ENV === "development" 
+    ? "http://localhost:3000" 
+    : process.env.APP_URL;
+    const link = `${appUrl}/reset-password.html?token=${token}`;
+
+    await transporter.sendMail({
+      from: process.env.GMAIL_USER,
+      to: usuario,
+      subject: "Reseteo de contraseña - Bomberos Colón BA",
+      html: `
+        <h2>Reseteo de contraseña</h2>
+        <p>Hacé clic en el siguiente link para resetear tu contraseña. El link expira en 30 minutos.</p>
+        <a href="${link}">${link}</a>
+      `
+    });
+
+    res.json({ success: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ success: false, message: "Error al enviar el mail" });
+  }
+});
+
+// Resetear contraseña con token
+app.post("/reset-password", async (req, res) => {
+  const { token, password } = req.body;
+  const data = resetTokens[token];
+
+  if (!data) return res.status(400).json({ success: false, message: "Token inválido" });
+  if (Date.now() > data.expira) {
+    delete resetTokens[token];
+    return res.status(400).json({ success: false, message: "El link expiró" });
+  }
+
+  try {
+    const hash = await bcrypt.hash(password, 10);
+    await db.collection("usuarios").doc(data.usuario).update({ password: hash });
+    delete resetTokens[token];
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ success: false, message: "Error al resetear contraseña" });
+  }
 });
 
 const PORT = process.env.PORT || 3000;

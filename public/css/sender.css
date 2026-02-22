@@ -106,8 +106,13 @@ button:disabled {
 }
 
 #login {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
   margin-top: 80px;
+  width: 100%;
+  max-width: 500px;
 }
 
 #login img {
@@ -121,6 +126,10 @@ button:disabled {
   padding: 10px;
   border-radius: 8px;
   border: 1px solid #ccc;
+}
+
+#login button {
+  margin-top: 10px;
 }
 
 #verHistorialBtn {

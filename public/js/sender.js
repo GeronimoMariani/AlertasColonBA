@@ -22,6 +22,8 @@ function cerrarSesion() {
   sessionStorage.removeItem("usuarioLogueado");
   document.getElementById("main").style.display = "none";
   document.getElementById("login").style.display = "flex";
+  document.getElementById("login").style.flexDirection = "column";
+  document.getElementById("login").style.alignItems = "center";
   document.getElementById("usuarioInput").value = "";
   document.getElementById("passwordInput").value = "";
 }
@@ -134,3 +136,27 @@ function showMessage(text, type = "info") {
     setTimeout(() => msg.remove(), 500);
   }, 4000);
 }
+
+document.getElementById("olvidéBtn").addEventListener("click", async () => {
+  const usuario = prompt("Ingresá tu mail para recibir el link de reseteo:");
+  
+  if (!usuario) return;
+
+  try {
+    const res = await fetch("/solicitar-reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ usuario: usuario.trim().toLowerCase() })
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      alert("✅ Te enviamos un mail con el link para resetear tu contraseña.");
+    } else {
+      alert(`❌ ${data.message || "Error al enviar el mail."}`);
+    }
+  } catch (e) {
+    alert("Error al conectar con el servidor.");
+  }
+});

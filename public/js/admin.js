@@ -20,12 +20,12 @@ document.getElementById("loginAdminBtn").addEventListener("click", async () => {
       document.getElementById("panelAdmin").style.display = "block";
       cargarUsuarios();
     } else if (res.ok && data.success && data.rol !== "admin") {
-      alert("❌ No tenés permisos de administrador.");
+      showMessage("❌ No tenés permisos de administrador.", "error");
     } else {
-      alert(`❌ ${data.message || "Error al iniciar sesión."}`);
+      showMessage(`❌ ${data.message || "Error al iniciar sesión."}`, "error");
     }
   } catch (e) {
-    alert("Error al conectar con el servidor.");
+    showMessage("Error al conectar con el servidor.", "error");
   }
 });
 
@@ -59,7 +59,7 @@ async function cargarUsuarios() {
     renderSeccion("aprobados", aprobados, ["rechazar", "eliminar"]);
     renderSeccion("rechazados", rechazados, ["aprobar", "eliminar"]);
   } catch (e) {
-    alert("Error al cargar usuarios.");
+    showMessage("Error al cargar usuarios.", "error");
   }
 }
 
@@ -90,10 +90,14 @@ async function gestionar(usuario, estado) {
       body: JSON.stringify({ usuario, estado })
     });
     const data = await res.json();
-    if (data.success) cargarUsuarios();
-    else alert("Error al gestionar usuario.");
+    if (data.success) {
+      showMessage("✅ Usuario actualizado correctamente.", "success");
+      cargarUsuarios();
+    } else {
+      showMessage("Error al gestionar usuario.", "error");
+    }
   } catch (e) {
-    alert("Error al conectar con el servidor.");
+    showMessage("Error al conectar con el servidor.", "error");
   }
 }
 
@@ -102,9 +106,37 @@ async function eliminar(usuario) {
   try {
     const res = await fetch(`/eliminar-usuario/${usuario}`, { method: "DELETE" });
     const data = await res.json();
-    if (data.success) cargarUsuarios();
-    else alert("Error al eliminar usuario.");
+    if (data.success) {
+      showMessage("✅ Usuario eliminado.", "success");
+      cargarUsuarios();
+    } else {
+      showMessage("Error al eliminar usuario.", "error");
+    }
   } catch (e) {
-    alert("Error al conectar con el servidor.");
+    showMessage("Error al conectar con el servidor.", "error");
   }
+}
+
+function showMessage(text, type = "info") {
+  const msg = document.createElement("div");
+  msg.textContent = text;
+  msg.style.position = "fixed";
+  msg.style.top = "20px";
+  msg.style.left = "50%";
+  msg.style.transform = "translateX(-50%)";
+  msg.style.background = type === "success" ? "#28a745" : "#dc3545";
+  msg.style.color = "#fff";
+  msg.style.padding = "12px 20px";
+  msg.style.borderRadius = "8px";
+  msg.style.fontSize = "1rem";
+  msg.style.zIndex = "9999";
+  msg.style.boxShadow = "0 0 10px rgba(0,0,0,0.3)";
+  msg.style.opacity = "0";
+  msg.style.transition = "opacity 0.3s ease";
+  document.body.appendChild(msg);
+  setTimeout(() => (msg.style.opacity = "1"), 10);
+  setTimeout(() => {
+    msg.style.opacity = "0";
+    setTimeout(() => msg.remove(), 500);
+  }, 4000);
 }
