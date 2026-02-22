@@ -8,7 +8,9 @@ const fs = require("fs");
 const rateLimit = require("express-rate-limit");
 const admin = require("firebase-admin");
 const bcrypt = require("bcryptjs");
-const nodemailer = require("nodemailer");
+const sgMail = require("@sendgrid/mail");
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // Inicializar Firebase Admin
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -72,20 +74,6 @@ app.post("/check-password", loginLimiter, (req, res) => {
 let lastAlert = null;
 let alertTimeout = null;
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  family: 4,
-  tls: {
-    rejectUnauthorized: false
-  },
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS,
-  },
-});
-
 // Registro de nuevo usuario (queda pendiente)
 app.post("/registro-usuario", async (req, res) => {
   const { usuario, password, nombre, apellido } = req.body;
@@ -104,7 +92,7 @@ app.post("/registro-usuario", async (req, res) => {
     });
 
     // Notificar al admin por mail
-    await transporter.sendMail({
+    await sgMail.send({
       from: process.env.GMAIL_USER,
       to: process.env.ADMIN_EMAIL,
       subject: "🔔 Nueva solicitud de acceso - Bomberos Colón BA",
@@ -295,7 +283,7 @@ app.post("/solicitar-reset", async (req, res) => {
     : process.env.APP_URL;
     const link = `${appUrl}/reset-password.html?token=${token}`;
 
-    await transporter.sendMail({
+    await sgMail.send({
       from: process.env.GMAIL_USER,
       to: usuario,
       subject: "Reseteo de contraseña - Bomberos Colón BA",

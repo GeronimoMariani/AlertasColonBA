@@ -14,6 +14,7 @@
     "publish": "npm run clean && electron-builder --publish always"
   },
   "dependencies": {
+    "@sendgrid/mail": "^8.1.6",
     "axios": "^1.7.7",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.2.3",
