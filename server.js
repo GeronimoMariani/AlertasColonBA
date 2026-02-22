@@ -93,7 +93,6 @@ app.post("/registro-usuario", async (req, res) => {
     await transporter.sendMail({
       from: process.env.GMAIL_USER,
       to: process.env.ADMIN_EMAIL,
-      family: 4,
       subject: "🔔 Nueva solicitud de acceso - Bomberos Colón BA",
       html: `
         <h2>Nueva solicitud de acceso</h2>
@@ -266,6 +265,7 @@ io.on("connection", async (socket) => {
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
+  family: 4,
   auth: {
     user: process.env.GMAIL_USER,
     pass: process.env.GMAIL_PASS,
@@ -293,7 +293,6 @@ app.post("/solicitar-reset", async (req, res) => {
     await transporter.sendMail({
       from: process.env.GMAIL_USER,
       to: usuario,
-      family: 4,
       subject: "Reseteo de contraseña - Bomberos Colón BA",
       html: `
         <h2>Reseteo de contraseña</h2>
