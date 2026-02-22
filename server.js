@@ -172,40 +172,40 @@ async function guardarAlertaFirebase(alerta) {
   }
 }
 
-async function enviarWhatsApp(alerta) {
-  const numeros = process.env.WHATSAPP_NUMEROS.split(",");
+// async function enviarWhatsApp(alerta) {
+//   const numeros = process.env.WHATSAPP_NUMEROS.split(",");
   
-  const mensaje = `🚨 *NUEVA ALERTA* 🚨
-Tipo: ${alerta.tipo.toUpperCase()}
-Dirección: ${alerta.direccion}
-Descripción: ${alerta.descripcion}
-Despachado por: ${alerta.despachadoPor}
-Contacto: ${alerta.contacto}
-Hora: ${alerta.timestamp}`;
+//   const mensaje = `🚨 *NUEVA ALERTA* 🚨
+// Tipo: ${alerta.tipo.toUpperCase()}
+// Dirección: ${alerta.direccion}
+// Descripción: ${alerta.descripcion}
+// Despachado por: ${alerta.despachadoPor}
+// Contacto: ${alerta.contacto}
+// Hora: ${alerta.timestamp}`;
 
-  for (const numero of numeros) {
-    try {
-      await axios.post(
-        `https://graph.facebook.com/v22.0/${process.env.WHATSAPP_PHONE_ID}/messages`,
-        {
-          messaging_product: "whatsapp",
-          to: numero.trim(),
-          type: "text",
-          text: { body: mensaje },
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      console.log(`✅ WhatsApp enviado a ${numero}`);
-    } catch (error) {
-      console.error(`❌ Error al enviar a ${numero}:`, error.response?.data || error.message);
-    }
-  }
-}
+//   for (const numero of numeros) {
+//     try {
+//       await axios.post(
+//         `https://graph.facebook.com/v22.0/${process.env.WHATSAPP_PHONE_ID}/messages`,
+//         {
+//           messaging_product: "whatsapp",
+//           to: numero.trim(),
+//           type: "text",
+//           text: { body: mensaje },
+//         },
+//         {
+//           headers: {
+//             Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
+//             "Content-Type": "application/json",
+//           },
+//         }
+//       );
+//       console.log(`✅ WhatsApp enviado a ${numero}`);
+//     } catch (error) {
+//       console.error(`❌ Error al enviar a ${numero}:`, error.response?.data || error.message);
+//     }
+//   }
+// }
 
 io.on("connection", async (socket) => {
   console.log("Nuevo visor conectado");
