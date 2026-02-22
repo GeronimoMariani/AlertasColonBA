@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
@@ -8,7 +9,6 @@ const rateLimit = require("express-rate-limit");
 const admin = require("firebase-admin");
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
-require('dotenv').config();
 
 // Inicializar Firebase Admin
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -20,6 +20,12 @@ const db = admin.firestore();
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+
+const token = process.env.GH_TOKEN;
+
+if (!token) {
+  throw new Error("GH_TOKEN no está definido");
+}
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
