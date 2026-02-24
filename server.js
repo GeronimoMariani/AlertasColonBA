@@ -119,6 +119,7 @@ app.post("/login-usuario", loginLimiter, async (req, res) => {
     const doc = await db.collection("usuarios").doc(usuario).get();
     if (!doc.exists) return res.status(401).json({ success: false, message: "Usuario incorrecto" });
     const data = doc.data();
+    console.log("Datos del usuario:", data); // <-- agregá esto
     if (data.estado !== "aprobado") return res.status(403).json({ success: false, message: "Usuario pendiente de aprobación" });
     const match = await bcrypt.compare(password, data.password);
     if (!match) return res.status(401).json({ success: false, message: "Contraseña incorrecta" });

@@ -20,6 +20,7 @@ window.addEventListener("load", () => {
 
 function cerrarSesion() {
   localStorage.removeItem("usuarioLogueado");
+  localStorage.removeItem("rolUsuario");
   document.getElementById("main").style.display = "none";
   document.getElementById("login").style.display = "flex";
   document.getElementById("login").style.flexDirection = "column";
@@ -46,6 +47,13 @@ function mostrarPanel() {
   document.getElementById("main").style.display = "block";
   setInterval(updateDateTime, 1000);
   updateDateTime();
+
+  // Mostrar historial y estadísticas solo si es admin
+  const rol = localStorage.getItem("rolUsuario");
+  if (rol !== "admin") {
+    document.getElementById("verHistorialBtn").style.display = "none";
+    document.getElementById("verEstadisticasBtn").style.display = "none";
+  }
 }
 
 document.getElementById("ingresarBtn").addEventListener("click", loginUsuario);
@@ -71,11 +79,10 @@ async function loginUsuario() {
     });
 
     const data = await res.json();
-    console.log("Respuesta del servidor:", data);
 
     if (res.ok && data.success) {
-      console.log("Guardando en localStorage...");
       localStorage.setItem("usuarioLogueado", data.usuario);
+      localStorage.setItem("rolUsuario", data.rol);
       mostrarPanel();
     } else {
       showMessage(`❌ ${data.message || "Error al iniciar sesión."}`, "error");
