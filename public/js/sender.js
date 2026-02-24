@@ -48,11 +48,17 @@ function mostrarPanel() {
   setInterval(updateDateTime, 1000);
   updateDateTime();
 
-  // Mostrar historial y estadísticas solo si es admin
   const rol = localStorage.getItem("rolUsuario");
-  if (rol !== "admin") {
-    document.getElementById("verHistorialBtn").style.display = "none";
-    document.getElementById("verEstadisticasBtn").style.display = "none";
+  console.log("Rol en mostrarPanel:", rol); // <-- temporal para debug
+  const historialBtn = document.getElementById("verHistorialBtn");
+  const estadisticasBtn = document.getElementById("verEstadisticasBtn");
+
+  if (rol === "admin") {
+    historialBtn.style.display = "inline-block";
+    estadisticasBtn.style.display = "inline-block";
+  } else {
+    historialBtn.style.display = "none";
+    estadisticasBtn.style.display = "none";
   }
 }
 
