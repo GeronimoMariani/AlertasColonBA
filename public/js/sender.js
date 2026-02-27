@@ -102,6 +102,24 @@ document.getElementById("cerrarSesionBtn").addEventListener("click", cerrarSesio
 
 document.getElementById("alertForm").addEventListener("submit", (e) => {
   e.preventDefault();
+
+  const tipo = document.getElementById("tipo").value;
+  const direccion = document.getElementById("direccion").value;
+
+  document.getElementById("modalTexto").innerHTML = `
+    <strong>Tipo:</strong> ${tipo}<br>
+    <strong>Dirección:</strong> ${direccion}
+  `;
+  document.getElementById("modalConfirm").style.display = "flex";
+});
+
+document.getElementById("modalCancelar").addEventListener("click", () => {
+  document.getElementById("modalConfirm").style.display = "none";
+});
+
+document.getElementById("modalConfirmar").addEventListener("click", () => {
+  document.getElementById("modalConfirm").style.display = "none";
+
   const btn = document.getElementById("sendBtn");
   const loading = document.getElementById("loading");
   btn.disabled = true;
@@ -124,7 +142,7 @@ document.getElementById("alertForm").addEventListener("submit", (e) => {
     btn.disabled = false;
     loading.style.display = "none";
     showMessage("✅ Alerta enviada correctamente", "success");
-    e.target.reset();
+    document.getElementById("alertForm").reset();
   }, 1000);
 });
 
