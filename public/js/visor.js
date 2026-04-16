@@ -62,6 +62,7 @@ socket.on("clearAlert", () => {
 
 // --- Estado de conexión ---
 socket.on("connect", () => {
+  socket.emit("registrarVisor");
   statusEl.textContent = "🟢 Conectado al servidor";
   statusEl.style.color = "#0f0";
 });

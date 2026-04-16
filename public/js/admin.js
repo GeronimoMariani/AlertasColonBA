@@ -56,7 +56,7 @@ async function cargarUsuarios() {
     const rechazados = usuarios.filter(u => u.estado === "rechazado");
 
     renderSeccion("pendientes", pendientes, ["aprobar", "rechazar"]);
-    renderSeccion("aprobados", aprobados, ["rechazar", "eliminar"]);
+    renderSeccion("aprobados", aprobados, ["cambiarRol", "rechazar", "eliminar"]);
     renderSeccion("rechazados", rechazados, ["aprobar", "eliminar"]);
   } catch (e) {
     showMessage("Error al cargar usuarios.", "error");
@@ -72,10 +72,11 @@ function renderSeccion(containerId, usuarios, acciones) {
 
   contenedor.innerHTML = usuarios.map(u => `
     <div class="usuario-card">
-      <span class="nombre">👤 ${u.nombre} ${u.apellido} (${u.usuario})</span>
+      <span class="nombre">👤 ${u.nombre} ${u.apellido} (${u.usuario}) — <em>${u.rol}</em></span>
       <div class="acciones">
         ${acciones.includes("aprobar") ? `<button class="btn-aprobar" onclick="gestionar('${u.id}', 'aprobado')">✅ Aprobar</button>` : ""}
         ${acciones.includes("rechazar") ? `<button class="btn-rechazar" onclick="gestionar('${u.id}', 'rechazado')">❌ Rechazar</button>` : ""}
+        ${acciones.includes("cambiarRol") ? `<button class="btn-rol" onclick="cambiarRol('${u.id}', '${u.rol}')">${u.rol === "admin" ? "⬇️ Quitar admin" : "⬆️ Hacer admin"}</button>` : ""}
         ${acciones.includes("eliminar") ? `<button class="btn-eliminar" onclick="eliminar('${u.id}')">🗑 Eliminar</button>` : ""}
       </div>
     </div>
@@ -95,6 +96,26 @@ async function gestionar(usuario, estado) {
       cargarUsuarios();
     } else {
       showMessage("Error al gestionar usuario.", "error");
+    }
+  } catch (e) {
+    showMessage("Error al conectar con el servidor.", "error");
+  }
+}
+
+async function cambiarRol(usuario, rolActual) {
+  const nuevoRol = rolActual === "admin" ? "despachador" : "admin";
+  try {
+    const res = await fetch("/cambiar-rol", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ usuario, rol: nuevoRol })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showMessage(`✅ Rol cambiado a ${nuevoRol}.`, "success");
+      cargarUsuarios();
+    } else {
+      showMessage("Error al cambiar rol.", "error");
     }
   } catch (e) {
     showMessage("Error al conectar con el servidor.", "error");

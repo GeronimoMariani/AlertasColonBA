@@ -193,3 +193,8 @@ document.getElementById("olvidéBtn").addEventListener("click", async () => {
     showMessage("Error al conectar con el servidor.", "error");
   }
 });
+
+socket.on("visoresCount", (count) => {
+  const el = document.getElementById("visoresCount");
+  if (el) el.textContent = `📺 Visores conectados: ${count}`;
+});

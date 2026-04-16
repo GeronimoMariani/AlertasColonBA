@@ -12,7 +12,6 @@ const sgMail = require("@sendgrid/mail");
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-// Inicializar Firebase Admin
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
@@ -74,7 +73,6 @@ app.post("/check-password", loginLimiter, (req, res) => {
 let lastAlert = null;
 let alertTimeout = null;
 
-// Registro de nuevo usuario (queda pendiente)
 app.post("/registro-usuario", async (req, res) => {
   const { usuario, password, nombre, apellido } = req.body;
   try {
@@ -83,15 +81,12 @@ app.post("/registro-usuario", async (req, res) => {
 
     const hash = await bcrypt.hash(password, 10);
     await db.collection("usuarios").doc(usuario).set({
-      usuario,
-      nombre,
-      apellido,
+      usuario, nombre, apellido,
       password: hash,
       rol: "despachador",
       estado: "pendiente"
     });
 
-    // Notificar al admin por mail
     await sgMail.send({
       from: process.env.GMAIL_USER,
       to: process.env.ADMIN_EMAIL,
@@ -100,11 +95,10 @@ app.post("/registro-usuario", async (req, res) => {
         <h2>Nueva solicitud de acceso</h2>
         <p><strong>Nombre:</strong> ${nombre} ${apellido}</p>
         <p><strong>Mail:</strong> ${usuario}</p>
-        <p>Ingresá al panel de administración para aprobar o rechazar la solicitud.</p>
         <a href="${process.env.APP_URL}/admin.html">Ir al panel</a>
       `
     });
-    console.log("✅ Mail de notificación enviado");
+
     res.json({ success: true });
   } catch (e) {
     console.error(e);
@@ -112,14 +106,12 @@ app.post("/registro-usuario", async (req, res) => {
   }
 });
 
-// Login de usuario despachador
 app.post("/login-usuario", loginLimiter, async (req, res) => {
   const { usuario, password } = req.body;
   try {
     const doc = await db.collection("usuarios").doc(usuario).get();
     if (!doc.exists) return res.status(401).json({ success: false, message: "Usuario incorrecto" });
     const data = doc.data();
-    console.log("Datos del usuario:", data); // <-- agregá esto
     if (data.estado !== "aprobado") return res.status(403).json({ success: false, message: "Usuario pendiente de aprobación" });
     const match = await bcrypt.compare(password, data.password);
     if (!match) return res.status(401).json({ success: false, message: "Contraseña incorrecta" });
@@ -129,7 +121,6 @@ app.post("/login-usuario", loginLimiter, async (req, res) => {
   }
 });
 
-// Listar usuarios (para el panel admin)
 app.get("/listar-usuarios", async (req, res) => {
   try {
     const snapshot = await db.collection("usuarios").get();
@@ -140,9 +131,8 @@ app.get("/listar-usuarios", async (req, res) => {
   }
 });
 
-// Aprobar o rechazar usuario
 app.post("/gestionar-usuario", async (req, res) => {
-  const { usuario, estado } = req.body; // estado: "aprobado" o "rechazado"
+  const { usuario, estado } = req.body;
   try {
     await db.collection("usuarios").doc(usuario).update({ estado });
     res.json({ success: true });
@@ -151,7 +141,16 @@ app.post("/gestionar-usuario", async (req, res) => {
   }
 });
 
-// Eliminar usuario
+app.post("/cambiar-rol", async (req, res) => {
+  const { usuario, rol } = req.body;
+  try {
+    await db.collection("usuarios").doc(usuario).update({ rol });
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ success: false, message: "Error al cambiar rol" });
+  }
+});
+
 app.delete("/eliminar-usuario/:usuario", async (req, res) => {
   const { usuario } = req.params;
   try {
@@ -164,8 +163,7 @@ app.delete("/eliminar-usuario/:usuario", async (req, res) => {
 
 async function guardarAlertaFirebase(alerta) {
   try {
-    const alertasRef = db.collection("alertas");
-    await alertasRef.add({
+    await db.collection("alertas").add({
       ...alerta,
       timestamp: new Date().toISOString()
     });
@@ -175,46 +173,34 @@ async function guardarAlertaFirebase(alerta) {
   }
 }
 
-// async function enviarWhatsApp(alerta) {
-//   const numeros = process.env.WHATSAPP_NUMEROS.split(",");
-  
-//   const mensaje = `🚨 *NUEVA ALERTA* 🚨
-// Tipo: ${alerta.tipo.toUpperCase()}
-// Dirección: ${alerta.direccion}
-// Descripción: ${alerta.descripcion}
-// Despachado por: ${alerta.despachadoPor}
-// Contacto: ${alerta.contacto}
-// Hora: ${alerta.timestamp}`;
-
-//   for (const numero of numeros) {
-//     try {
-//       await axios.post(
-//         `https://graph.facebook.com/v22.0/${process.env.WHATSAPP_PHONE_ID}/messages`,
-//         {
-//           messaging_product: "whatsapp",
-//           to: numero.trim(),
-//           type: "text",
-//           text: { body: mensaje },
-//         },
-//         {
-//           headers: {
-//             Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
-//             "Content-Type": "application/json",
-//           },
-//         }
-//       );
-//       console.log(`✅ WhatsApp enviado a ${numero}`);
-//     } catch (error) {
-//       console.error(`❌ Error al enviar a ${numero}:`, error.response?.data || error.message);
-//     }
-//   }
-// }
+// Contador de visores conectados
+let visoresConectados = 0;
 
 io.on("connection", async (socket) => {
-  console.log("Nuevo visor conectado");
+
+  // Registrar visor
+  socket.on("registrarVisor", () => {
+    socket.esVisor = true;
+    visoresConectados++;
+    io.emit("visoresCount", visoresConectados);
+    console.log(`📺 Visor conectado. Total: ${visoresConectados}`);
+  });
+
+  // Desconexión
+  socket.on("disconnect", () => {
+    if (socket.esVisor) {
+      visoresConectados--;
+      if (visoresConectados < 0) visoresConectados = 0;
+      io.emit("visoresCount", visoresConectados);
+      console.log(`📺 Visor desconectado. Total: ${visoresConectados}`);
+    }
+  });
 
   // Enviar última alerta activa
   if (lastAlert) socket.emit("alert", lastAlert);
+
+  // Enviar count actual al conectarse
+  socket.emit("visoresCount", visoresConectados);
 
   // Enviar historial desde Firebase
   try {
@@ -226,32 +212,20 @@ io.on("connection", async (socket) => {
   }
 
   socket.on("sendAlert", async (data) => {
-    console.log("Nueva alerta recibida:", data);
-
     const now = new Date();
     const timestamp = now.toLocaleString("es-AR", {
-      hour: "2-digit",
-      minute: "2-digit",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
+      hour: "2-digit", minute: "2-digit",
+      day: "2-digit", month: "2-digit", year: "numeric",
       timeZone: "America/Argentina/Buenos_Aires",
     });
 
     lastAlert = { ...data, timestamp };
-
-    // Guardar en Firebase (fuente única de verdad)
     await guardarAlertaFirebase(lastAlert);
-
-    // Notificar a todos en tiempo real
     io.emit("alert", lastAlert);
 
-    // Actualizar historial en todos los visores
     const snapshot = await db.collection("alertas").orderBy("timestamp", "desc").limit(20).get();
     const historial = snapshot.docs.map(doc => doc.data());
     io.emit("history", historial);
-
-    // enviarWhatsApp(lastAlert);
 
     if (alertTimeout) clearTimeout(alertTimeout);
     alertTimeout = setTimeout(() => {
@@ -266,10 +240,8 @@ io.on("connection", async (socket) => {
   });
 });
 
-// Almacena tokens temporales de reseteo
 const resetTokens = {};
 
-// Solicitar reseteo de contraseña
 app.post("/solicitar-reset", async (req, res) => {
   const { usuario } = req.body;
   try {
@@ -277,11 +249,11 @@ app.post("/solicitar-reset", async (req, res) => {
     if (!doc.exists) return res.status(404).json({ success: false, message: "Usuario no encontrado" });
 
     const token = Math.random().toString(36).substring(2, 15);
-    resetTokens[token] = { usuario, expira: Date.now() + 30 * 60 * 1000 }; // 30 minutos
+    resetTokens[token] = { usuario, expira: Date.now() + 30 * 60 * 1000 };
 
-    const appUrl = process.env.NODE_ENV === "development" 
-    ? "http://localhost:3000" 
-    : process.env.APP_URL;
+    const appUrl = process.env.NODE_ENV === "development"
+      ? "http://localhost:3000"
+      : process.env.APP_URL;
     const link = `${appUrl}/reset-password.html?token=${token}`;
 
     await sgMail.send({
@@ -302,7 +274,6 @@ app.post("/solicitar-reset", async (req, res) => {
   }
 });
 
-// Resetear contraseña con token
 app.post("/reset-password", async (req, res) => {
   const { token, password } = req.body;
   const data = resetTokens[token];

@@ -17,7 +17,27 @@ header {
   justify-content: space-between;
   width: 100%;
   max-width: 800px;
-  margin-bottom: 30px;
+  margin-bottom: 8px;
+}
+
+#headerInfo {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  max-width: 800px;
+  margin-bottom: 20px;
+}
+
+#visoresCount {
+  position: fixed;
+  top: 15px;
+  right: 15px;
+  font-size: 0.9rem;
+  color: #555;
+  background: #f0f0f0;
+  padding: 5px 12px;
+  border-radius: 20px;
+  z-index: 100;
 }
 
 header img {
