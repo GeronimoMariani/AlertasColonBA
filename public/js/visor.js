@@ -28,7 +28,8 @@ function updateDateTime() {
   const options = {
     timeZone: "America/Argentina/Buenos_Aires",
     hour: "2-digit",
-    minute: "2-digit"
+    minute: "2-digit",
+    second: "2-digit"
   };
   const hora = now.toLocaleTimeString("es-AR", options);
   const fecha = now.toLocaleDateString("es-AR");
@@ -46,7 +47,7 @@ socket.on("alert", (data) => {
     <p>Descripcion: ${data.descripcion || ""}</p>
     <p class="info">Despachado por: ${data.despachadoPor}</p>
     <p class="info">Contacto: ${data.contacto || "—"}</p>
-    <p class="info">Hora: ${data.timestamp}</p>
+    <p class="info">Fecha: ${data.timestamp}</p>
   `;
 });
 
