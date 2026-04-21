@@ -40,7 +40,7 @@ function createWindow() {
     },
   });
 
-mainWindow.loadURL("https://alertascolonba.onrender.com/");
+mainWindow.loadURL("https://alertasbomberoscolonba.com.ar/");
 
   // mainWindow.webContents.openDevTools(); 
   mainWindow.on("closed", () => {

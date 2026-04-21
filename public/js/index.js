@@ -1,6 +1,6 @@
 // public/js/index.js
 
-const SERVER_URL = "https://alertascolonba.onrender.com"; 
+const SERVER_URL = "https://alertasbomberoscolonba.com.ar"; 
 
 async function checkAppVersion() {
     const loadingText = document.getElementById('loading-text');
