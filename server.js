@@ -20,7 +20,17 @@ const db = admin.firestore();
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: [
+      "https://alertasbomberoscolonba.com.ar",
+      "https://www.alertasbomberoscolonba.com.ar",
+      "https://alertascolonba.onrender.com",
+      "http://localhost:3000"
+    ],
+    methods: ["GET", "POST"]
+  }
+});
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

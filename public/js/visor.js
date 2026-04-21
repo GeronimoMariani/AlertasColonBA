@@ -42,7 +42,7 @@ socket.on("alert", (data) => {
   playSirena();
   container.innerHTML = `
     <h1>${data.tipo.toUpperCase()}</h1>
-    <h2>CALLE: ${data.direccion}</h2>
+    <h2>DIRECCIÓN: ${data.direccion}</h2>
     <p>Descripcion: ${data.descripcion || ""}</p>
     <p class="info">Despachado por: ${data.despachadoPor}</p>
     <p class="info">Contacto: ${data.contacto || "—"}</p>
