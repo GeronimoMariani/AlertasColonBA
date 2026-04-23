@@ -232,6 +232,7 @@ io.on("connection", async (socket) => {
     lastAlert = { ...data, timestamp };
     await guardarAlertaFirebase(lastAlert);
     io.emit("alert", lastAlert);
+    enviarTelegram(lastAlert);
 
     const snapshot = await db.collection("alertas").orderBy("timestamp", "desc").limit(20).get();
     const historial = snapshot.docs.map(doc => doc.data());
@@ -303,6 +304,27 @@ app.post("/reset-password", async (req, res) => {
     res.status(500).json({ success: false, message: "Error al resetear contraseña" });
   }
 });
+
+async function enviarTelegram(alerta) {
+  const mensaje = `🚨 *NUEVA ALERTA* 🚨
+*Tipo:* ${alerta.tipo.toUpperCase()}
+*Dirección:* ${alerta.direccion}
+*Descripción:* ${alerta.descripcion}
+*Despachado por:* ${alerta.despachadoPor}
+*Contacto:* ${alerta.contacto || "—"}
+*Hora:* ${alerta.timestamp}`;
+
+  try {
+    await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_TOKEN}/sendMessage`, {
+      chat_id: process.env.TELEGRAM_CHAT_ID,
+      text: mensaje,
+      parse_mode: "Markdown"
+    });
+    console.log("✅ Mensaje de Telegram enviado");
+  } catch (error) {
+    console.error("❌ Error al enviar Telegram:", error.response?.data || error.message);
+  }
+}
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
