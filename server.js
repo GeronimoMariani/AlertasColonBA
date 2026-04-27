@@ -8,9 +8,17 @@ const fs = require("fs");
 const rateLimit = require("express-rate-limit");
 const admin = require("firebase-admin");
 const bcrypt = require("bcryptjs");
-const sgMail = require("@sendgrid/mail");
+const nodemailer = require("nodemailer");
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS,
+  },
+});
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 admin.initializeApp({
@@ -19,6 +27,7 @@ admin.initializeApp({
 const db = admin.firestore();
 
 const app = express();
+app.set("trust proxy", 1);
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -26,8 +35,9 @@ const io = new Server(server, {
       "https://alertasbomberoscolonba.com.ar",
       "https://www.alertasbomberoscolonba.com.ar",
       "https://alertascolonba.onrender.com",
+      process.env.DEV_URL,
       "http://localhost:3000"
-    ],
+    ].filter(Boolean),
     methods: ["GET", "POST"]
   }
 });
@@ -97,17 +107,22 @@ app.post("/registro-usuario", async (req, res) => {
       estado: "pendiente"
     });
 
-    await sgMail.send({
-      from: process.env.GMAIL_USER,
-      to: process.env.ADMIN_EMAIL,
-      subject: "🔔 Nueva solicitud de acceso - Bomberos Colón BA",
-      html: `
-        <h2>Nueva solicitud de acceso</h2>
-        <p><strong>Nombre:</strong> ${nombre} ${apellido}</p>
-        <p><strong>Mail:</strong> ${usuario}</p>
-        <a href="${process.env.APP_URL}/admin.html">Ir al panel</a>
-      `
-    });
+    try {
+      await transporter.sendMail({
+        from: process.env.GMAIL_USER,
+        to: process.env.ADMIN_EMAIL,
+        subject: "🔔 Nueva solicitud de acceso - Bomberos Colón BA",
+        html: `
+          <h2>Nueva solicitud de acceso</h2>
+          <p><strong>Nombre:</strong> ${nombre} ${apellido}</p>
+          <p><strong>Mail:</strong> ${usuario}</p>
+          <a href="${process.env.APP_URL}/admin.html">Ir al panel</a>
+        `
+      });
+      console.log("✅ Mail de notificación enviado");
+    } catch (mailError) {
+      console.error("❌ Error al enviar mail:", mailError);
+    }
 
     res.json({ success: true });
   } catch (e) {
@@ -183,12 +198,32 @@ async function guardarAlertaFirebase(alerta) {
   }
 }
 
+async function enviarTelegram(alerta) {
+  const mensaje = `🚨 *NUEVA ALERTA* 🚨
+*Tipo:* ${alerta.tipo.toUpperCase()}
+*Dirección:* ${alerta.direccion}
+*Descripción:* ${alerta.descripcion || "—"}
+*Despachado por:* ${alerta.despachadoPor}
+*Contacto:* ${alerta.contacto || "—"}
+*Hora:* ${alerta.timestamp}`;
+
+  try {
+    await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_TOKEN}/sendMessage`, {
+      chat_id: process.env.TELEGRAM_CHAT_ID,
+      text: mensaje,
+      parse_mode: "Markdown"
+    });
+    console.log("✅ Mensaje de Telegram enviado");
+  } catch (error) {
+    console.error("❌ Error al enviar Telegram:", error.response?.data || error.message);
+  }
+}
+
 // Contador de visores conectados
 let visoresConectados = 0;
 
 io.on("connection", async (socket) => {
 
-  // Registrar visor
   socket.on("registrarVisor", () => {
     socket.esVisor = true;
     visoresConectados++;
@@ -196,7 +231,6 @@ io.on("connection", async (socket) => {
     console.log(`📺 Visor conectado. Total: ${visoresConectados}`);
   });
 
-  // Desconexión
   socket.on("disconnect", () => {
     if (socket.esVisor) {
       visoresConectados--;
@@ -206,13 +240,9 @@ io.on("connection", async (socket) => {
     }
   });
 
-  // Enviar última alerta activa
   if (lastAlert) socket.emit("alert", lastAlert);
-
-  // Enviar count actual al conectarse
   socket.emit("visoresCount", visoresConectados);
 
-  // Enviar historial desde Firebase
   try {
     const snapshot = await db.collection("alertas").orderBy("timestamp", "desc").limit(20).get();
     const historial = snapshot.docs.map(doc => doc.data());
@@ -267,7 +297,7 @@ app.post("/solicitar-reset", async (req, res) => {
       : process.env.APP_URL;
     const link = `${appUrl}/reset-password.html?token=${token}`;
 
-    await sgMail.send({
+    await transporter.sendMail({
       from: process.env.GMAIL_USER,
       to: usuario,
       subject: "Reseteo de contraseña - Bomberos Colón BA",
@@ -304,27 +334,6 @@ app.post("/reset-password", async (req, res) => {
     res.status(500).json({ success: false, message: "Error al resetear contraseña" });
   }
 });
-
-async function enviarTelegram(alerta) {
-  const mensaje = `🚨 *NUEVA ALERTA* 🚨
-*Tipo:* ${alerta.tipo.toUpperCase()}
-*Dirección:* ${alerta.direccion}
-*Descripción:* ${alerta.descripcion}
-*Despachado por:* ${alerta.despachadoPor}
-*Contacto:* ${alerta.contacto || "—"}
-*Hora:* ${alerta.timestamp}`;
-
-  try {
-    await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_TOKEN}/sendMessage`, {
-      chat_id: process.env.TELEGRAM_CHAT_ID,
-      text: mensaje,
-      parse_mode: "Markdown"
-    });
-    console.log("✅ Mensaje de Telegram enviado");
-  } catch (error) {
-    console.error("❌ Error al enviar Telegram:", error.response?.data || error.message);
-  }
-}
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
