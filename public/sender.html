@@ -29,7 +29,7 @@
       <div id="datetime"></div>
       <button id="cerrarSesionBtn">🚪 Cerrar sesión</button>
     </header>
-    
+
     <span id="visoresCount">📺 Visores conectados: 0</span>
 
     <h1>Enviar Alerta</h1>
@@ -61,6 +61,7 @@
       <input type="text" id="contacto" placeholder="Numero de la victima" />
 
       <button type="submit" id="sendBtn">🚨 ENVIAR ALERTA</button>
+      <button type="button" id="editarAlertaBtn" style="display:none; background-color:#e67e00;">✏️ EDITAR ÚLTIMA ALERTA</button>
       <div id="loading">📡 Enviando alerta<span>...</span></div>
     </form>
 
@@ -68,6 +69,8 @@
       <a href="historial.html" id="verHistorialBtn">📜 Ver historial de alertas</a>
       <a href="estadisticas.html" id="verEstadisticasBtn">📊 Ver estadísticas</a>
     </div>
+  </div>
+
   <div id="modalConfirm" style="display:none;">
     <div id="modalBox">
       <h2>⚠️ Confirmar Alerta</h2>
@@ -78,7 +81,39 @@
       </div>
     </div>
   </div>
-  <script type="module" src="js/sender.js?v=3"></script>
+
+  <!-- Modal editar alerta -->
+  <div id="modalEditar" style="display:none;">
+    <div id="modalEditarBox">
+      <h2>✏️ Editar última alerta</h2>
+      <label>Tipo de siniestro:</label>
+      <select id="editTipo">
+        <option value="Incendio">Incendio</option>
+        <option value="Forestal">Forestal</option>
+        <option value="Accidente Vehicular">Accidente Vehicular</option>
+        <option value="Rescate">Rescate</option>
+        <option value="Materiales Peligrosos">Materiales Peligrosos</option>
+      </select>
+      <label>Dirección:</label>
+      <input type="text" id="editDireccion" />
+      <label>Descripción:</label>
+      <textarea id="editDescripcion" rows="3"></textarea>
+      <label>Despachado por:</label>
+      <select id="editDespachadoPor">
+        <option value="GUM">GUM</option>
+        <option value="POLICÍA">POLICÍA</option>
+        <option value="CUARTEL 60">CUARTEL 60</option>
+      </select>
+      <label>Contacto:</label>
+      <input type="text" id="editContacto" />
+      <div id="modalEditarBotones">
+        <button id="modalEditarCancelar">Cancelar</button>
+        <button id="modalEditarConfirmar">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/sender.js?v=5"></script>
 </body>
 </html>
 

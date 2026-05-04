@@ -10,6 +10,8 @@ const socket = io(SERVER_URL, {
   timeout: 10000,
 });
 
+let alertaActiva = false;
+
 // Verificar si ya está autenticado al cargar la página
 window.addEventListener("load", () => {
   const usuario = localStorage.getItem("usuarioLogueado");
@@ -49,7 +51,6 @@ function mostrarPanel() {
   updateDateTime();
 
   const rol = localStorage.getItem("rolUsuario");
-  console.log("Rol en mostrarPanel:", rol); // <-- temporal para debug
   const historialBtn = document.getElementById("verHistorialBtn");
   const estadisticasBtn = document.getElementById("verEstadisticasBtn");
 
@@ -143,7 +144,72 @@ document.getElementById("modalConfirmar").addEventListener("click", () => {
     loading.style.display = "none";
     showMessage("✅ Alerta enviada correctamente", "success");
     document.getElementById("alertForm").reset();
+    alertaActiva = true;
+    document.getElementById("editarAlertaBtn").style.display = "block";
   }, 1000);
+});
+
+// Escuchar cuando se limpia la alerta para ocultar el botón editar
+socket.on("clearAlert", () => {
+  alertaActiva = false;
+  document.getElementById("editarAlertaBtn").style.display = "none";
+});
+
+// Escuchar alerta activa al conectarse
+socket.on("alert", (data) => {
+  alertaActiva = true;
+  document.getElementById("editarAlertaBtn").style.display = "block";
+});
+
+// Botón editar
+document.getElementById("editarAlertaBtn").addEventListener("click", async () => {
+  try {
+    const res = await fetch("/ultima-alerta");
+    const data = await res.json();
+    if (!data) return showMessage("No hay alerta activa.", "error");
+
+    document.getElementById("editTipo").value = data.tipo;
+    document.getElementById("editDireccion").value = data.direccion;
+    document.getElementById("editDescripcion").value = data.descripcion || "";
+    document.getElementById("editDespachadoPor").value = data.despachadoPor;
+    document.getElementById("editContacto").value = data.contacto || "";
+
+    document.getElementById("modalEditar").style.display = "flex";
+  } catch (e) {
+    showMessage("Error al cargar la alerta.", "error");
+  }
+});
+
+document.getElementById("modalEditarCancelar").addEventListener("click", () => {
+  document.getElementById("modalEditar").style.display = "none";
+});
+
+document.getElementById("modalEditarConfirmar").addEventListener("click", async () => {
+  const body = {
+    tipo: document.getElementById("editTipo").value,
+    direccion: document.getElementById("editDireccion").value,
+    descripcion: document.getElementById("editDescripcion").value.toUpperCase(),
+    despachadoPor: document.getElementById("editDespachadoPor").value,
+    contacto: document.getElementById("editContacto").value,
+  };
+
+  try {
+    const res = await fetch("/editar-alerta", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById("modalEditar").style.display = "none";
+      showMessage("✅ Alerta actualizada correctamente.", "success");
+    } else {
+      showMessage(`❌ ${data.message || "Error al editar."}`, "error");
+    }
+  } catch (e) {
+    showMessage("Error al conectar con el servidor.", "error");
+  }
 });
 
 function showMessage(text, type = "info") {

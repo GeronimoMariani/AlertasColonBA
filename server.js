@@ -186,6 +186,29 @@ app.delete("/eliminar-usuario/:usuario", async (req, res) => {
   }
 });
 
+app.get("/ultima-alerta", (req, res) => {
+  res.json(lastAlert || null);
+});
+
+app.post("/editar-alerta", async (req, res) => {
+  if (!lastAlert) return res.status(400).json({ success: false, message: "No hay alerta activa" });
+
+  const { tipo, direccion, descripcion, despachadoPor, contacto } = req.body;
+  lastAlert = { ...lastAlert, tipo, direccion, descripcion, despachadoPor, contacto };
+
+  try {
+    const snapshot = await db.collection("alertas").orderBy("timestamp", "desc").limit(1).get();
+    if (!snapshot.empty) {
+      await snapshot.docs[0].ref.update({ tipo, direccion, descripcion, despachadoPor, contacto });
+    }
+  } catch (e) {
+    console.error("❌ Error al actualizar alerta:", e);
+  }
+
+  io.emit("alertActualizada", lastAlert); // alerta editada
+  res.json({ success: true });
+});
+
 async function guardarAlertaFirebase(alerta) {
   try {
     await db.collection("alertas").add({

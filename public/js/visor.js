@@ -11,6 +11,7 @@ const socket = io(SERVER_URL, {
 });
 
 const sirena = document.getElementById("sirena");
+const actualizacionSonido = document.getElementById("actualizacion");
 const container = document.getElementById("alertContainer");
 const datetime = document.getElementById("datetime");
 const statusEl = document.getElementById("status");
@@ -20,6 +21,13 @@ function playSirena() {
   sirena.pause();
   sirena.currentTime = 0;
   sirena.play().catch(() => {});
+}
+
+// --- Reproducir sonido de actualización ---
+function playActualizacion() {
+  actualizacionSonido.pause();
+  actualizacionSonido.currentTime = 0;
+  actualizacionSonido.play().catch(() => {});
 }
 
 // --- Actualizar fecha y hora ---
@@ -38,10 +46,9 @@ function updateDateTime() {
 setInterval(updateDateTime, 1000);
 updateDateTime();
 
-// --- Recibir alertas ---
-socket.on("alert", (data) => {
-  playSirena();
+function renderAlerta(data, actualizada = false) {
   container.innerHTML = `
+    ${actualizada ? `<div id="badgeActualizada">⚠️ ALERTA ACTUALIZADA</div>` : ""}
     <h1>${data.tipo.toUpperCase()}</h1>
     <h2>DIRECCIÓN: ${data.direccion}</h2>
     <p>Descripcion: ${data.descripcion || ""}</p>
@@ -49,6 +56,18 @@ socket.on("alert", (data) => {
     <p class="info">Contacto: ${data.contacto || "—"}</p>
     <p class="info">Fecha: ${data.timestamp}</p>
   `;
+}
+
+// --- Recibir alerta nueva ---
+socket.on("alert", (data) => {
+  playSirena();
+  renderAlerta(data, false);
+});
+
+// --- Recibir alerta actualizada ---
+socket.on("alertActualizada", (data) => {
+  playActualizacion();
+  renderAlerta(data, true);
 });
 
 // --- Limpiar alerta ---
