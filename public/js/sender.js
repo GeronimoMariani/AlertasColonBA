@@ -130,7 +130,7 @@ document.getElementById("modalConfirmar").addEventListener("click", () => {
 
   const data = {
     tipo: document.getElementById("tipo").value,
-    direccion: document.getElementById("direccion").value,
+    direccion: document.getElementById("direccion").value.toUpperCase(),
     descripcion: document.getElementById("descripcion").value.toUpperCase(),
     despachadoPor: document.getElementById("despachadoPor").value,
     contacto: document.getElementById("contacto").value,

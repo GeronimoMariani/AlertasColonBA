@@ -194,18 +194,32 @@ app.post("/editar-alerta", async (req, res) => {
   if (!lastAlert) return res.status(400).json({ success: false, message: "No hay alerta activa" });
 
   const { tipo, direccion, descripcion, despachadoPor, contacto } = req.body;
-  lastAlert = { ...lastAlert, tipo, direccion, descripcion, despachadoPor, contacto };
+  
+  lastAlert = { 
+    ...lastAlert, 
+    tipo, 
+    direccion: direccion.toUpperCase(),
+    descripcion: descripcion ? descripcion.toUpperCase() : "",
+    despachadoPor, 
+    contacto 
+  };
 
   try {
     const snapshot = await db.collection("alertas").orderBy("timestamp", "desc").limit(1).get();
     if (!snapshot.empty) {
-      await snapshot.docs[0].ref.update({ tipo, direccion, descripcion, despachadoPor, contacto });
+      await snapshot.docs[0].ref.update({ 
+        tipo, 
+        direccion: direccion.toUpperCase(),
+        descripcion: descripcion ? descripcion.toUpperCase() : "",
+        despachadoPor, 
+        contacto 
+      });
     }
   } catch (e) {
     console.error("❌ Error al actualizar alerta:", e);
   }
 
-  io.emit("alertActualizada", lastAlert); // alerta editada
+  io.emit("alertActualizada", lastAlert);
   res.json({ success: true });
 });
 
@@ -221,7 +235,7 @@ async function guardarAlertaFirebase(alerta) {
   }
 }
 
-async function enviarTelegram(alerta) {
+/* async function enviarTelegram(alerta) {
   const mensaje = `🚨 *NUEVA ALERTA* 🚨
 *Tipo:* ${alerta.tipo.toUpperCase()}
 *Dirección:* ${alerta.direccion}
@@ -240,7 +254,7 @@ async function enviarTelegram(alerta) {
   } catch (error) {
     console.error("❌ Error al enviar Telegram:", error.response?.data || error.message);
   }
-}
+} */
 
 // Contador de visores conectados
 let visoresConectados = 0;
@@ -284,8 +298,8 @@ io.on("connection", async (socket) => {
 
     lastAlert = { ...data, timestamp };
     await guardarAlertaFirebase(lastAlert);
+    /* enviarTelegram(lastAlert); */
     io.emit("alert", lastAlert);
-    enviarTelegram(lastAlert);
 
     const snapshot = await db.collection("alertas").orderBy("timestamp", "desc").limit(20).get();
     const historial = snapshot.docs.map(doc => doc.data());
