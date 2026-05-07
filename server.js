@@ -235,7 +235,7 @@ async function guardarAlertaFirebase(alerta) {
   }
 }
 
-/* async function enviarTelegram(alerta) {
+async function enviarTelegram(alerta) {
   const mensaje = `🚨 *NUEVA ALERTA* 🚨
 *Tipo:* ${alerta.tipo.toUpperCase()}
 *Dirección:* ${alerta.direccion}
@@ -254,7 +254,7 @@ async function guardarAlertaFirebase(alerta) {
   } catch (error) {
     console.error("❌ Error al enviar Telegram:", error.response?.data || error.message);
   }
-} */
+}
 
 // Contador de visores conectados
 let visoresConectados = 0;
@@ -298,7 +298,7 @@ io.on("connection", async (socket) => {
 
     lastAlert = { ...data, timestamp };
     await guardarAlertaFirebase(lastAlert);
-    /* enviarTelegram(lastAlert); */
+    enviarTelegram(lastAlert);
     io.emit("alert", lastAlert);
 
     const snapshot = await db.collection("alertas").orderBy("timestamp", "desc").limit(20).get();
