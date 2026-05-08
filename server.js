@@ -277,7 +277,7 @@ io.on("connection", async (socket) => {
     }
   });
 
-  if (lastAlert) socket.emit("alert", lastAlert);
+  if (lastAlert) socket.emit("alertExistente", lastAlert);
   socket.emit("visoresCount", visoresConectados);
 
   try {

@@ -70,6 +70,10 @@ socket.on("alertActualizada", (data) => {
   renderAlerta(data, true);
 });
 
+socket.on("alertExistente", (data) => {
+  renderAlerta(data, false); // muestra la alerta sin reproducir sirena
+});
+
 // --- Limpiar alerta ---
 socket.on("clearAlert", () => {
   container.innerHTML = `
