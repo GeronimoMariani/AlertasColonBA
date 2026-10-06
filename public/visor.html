@@ -5,38 +5,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Visor de Alertas - Bomberos Voluntarios de Colón</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico"/>
-  <link rel="stylesheet" href="css/visor.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+  <link rel="stylesheet" href="css/base.css?v=2" />
+  <link rel="stylesheet" href="css/visor.css?v=2" />
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 </head>
 <body>
-  <header>
-    <img src="logo.png" alt="Logo Bomberos" />
-    <div id="datetime"></div>
+  <header class="appbar">
+    <img src="logo.png" alt="Logo Bomberos" class="logo" />
+    <div class="brand"><b>Bomberos Voluntarios</b><small>Colón · Buenos Aires</small></div>
+    <div class="spacer"></div>
+    <div id="datetime">
+      <div id="hora"></div>
+      <div id="fecha"></div>
+    </div>
   </header>
 
   <main>
     <div id="alertContainer">
       <div id="noAlertContainer">
         <img src="logo.png" alt="Logo Bomberos" />
-        <h2>SIN ALERTAS ACTIVAS</h2>
+        <h2>Sin alertas activas</h2>
+        <p>En espera</p>
       </div>
     </div>
   </main>
 
-  <div id="status"></div>
+  <footer class="visor-foot">
+    <span id="status"></span>
+    <span>Sistema de alertas · Colón BA</span>
+  </footer>
+
   <audio id="sirena" src="sirena.mp3"></audio>
   <audio id="actualizacion" src="actualizacion.mp3"></audio>
-  <script src="js/visor.js?v=2"></script>
+  <script src="js/visor.js?v=3"></script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-

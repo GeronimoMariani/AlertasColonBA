@@ -93,22 +93,28 @@ async function cargarUsuarios() {
 
 function renderSeccion(containerId, usuarios, acciones) {
   const contenedor = document.getElementById(containerId);
+  document.getElementById(`${containerId}Count`).textContent = usuarios.length;
   if (usuarios.length === 0) {
-    contenedor.innerHTML = `<p class="empty-msg">No hay usuarios en esta categoría.</p>`;
+    contenedor.innerHTML = `<p class="vacio">No hay usuarios en esta categoría.</p>`;
     return;
   }
 
   contenedor.innerHTML = usuarios.map(u => {
     const id = escapeHtml(u.id);
     const rol = escapeHtml(u.rol);
+    const iniciales = `${String(u.nombre ?? "").charAt(0)}${String(u.apellido ?? "").charAt(0)}`;
     return `
     <div class="usuario-card">
-      <span class="nombre">👤 ${escapeHtml(u.nombre)} ${escapeHtml(u.apellido)} (${escapeHtml(u.usuario)}) — <em>${rol}</em></span>
+      <div class="avatar">${escapeHtml(iniciales)}</div>
+      <div>
+        <span class="nombre">${escapeHtml(u.nombre)} ${escapeHtml(u.apellido)}${u.rol === "admin" ? ` <span class="chip chip-steel">Admin</span>` : ""}</span>
+        <span class="correo">${escapeHtml(u.usuario)}</span>
+      </div>
       <div class="acciones">
-        ${acciones.includes("aprobar") ? `<button class="btn-aprobar" data-accion="gestionar" data-usuario="${id}" data-estado="aprobado">✅ Aprobar</button>` : ""}
-        ${acciones.includes("rechazar") ? `<button class="btn-rechazar" data-accion="gestionar" data-usuario="${id}" data-estado="rechazado">❌ Rechazar</button>` : ""}
-        ${acciones.includes("cambiarRol") ? `<button class="btn-rol" data-accion="cambiarRol" data-usuario="${id}" data-rol="${rol}">${u.rol === "admin" ? "⬇️ Quitar admin" : "⬆️ Hacer admin"}</button>` : ""}
-        ${acciones.includes("eliminar") ? `<button class="btn-eliminar" data-accion="eliminar" data-usuario="${id}">🗑 Eliminar</button>` : ""}
+        ${acciones.includes("aprobar") ? `<button class="btn-aprobar" data-accion="gestionar" data-usuario="${id}" data-estado="aprobado">Aprobar</button>` : ""}
+        ${acciones.includes("rechazar") ? `<button class="btn-rechazar" data-accion="gestionar" data-usuario="${id}" data-estado="rechazado">Rechazar</button>` : ""}
+        ${acciones.includes("cambiarRol") ? `<button class="btn-rol" data-accion="cambiarRol" data-usuario="${id}" data-rol="${rol}">${u.rol === "admin" ? "Quitar admin" : "Hacer admin"}</button>` : ""}
+        ${acciones.includes("eliminar") ? `<button class="btn-eliminar" data-accion="eliminar" data-usuario="${id}">Eliminar</button>` : ""}
       </div>
     </div>`;
   }).join("");
@@ -185,26 +191,15 @@ async function eliminar(usuario) {
   }
 }
 
+// El aspecto del aviso está en base.css (.toast)
 function showMessage(text, type = "info") {
   const msg = document.createElement("div");
+  msg.className = `toast toast-${type}`;
   msg.textContent = text;
-  msg.style.position = "fixed";
-  msg.style.top = "20px";
-  msg.style.left = "50%";
-  msg.style.transform = "translateX(-50%)";
-  msg.style.background = type === "success" ? "#28a745" : "#dc3545";
-  msg.style.color = "#fff";
-  msg.style.padding = "12px 20px";
-  msg.style.borderRadius = "8px";
-  msg.style.fontSize = "1rem";
-  msg.style.zIndex = "9999";
-  msg.style.boxShadow = "0 0 10px rgba(0,0,0,0.3)";
-  msg.style.opacity = "0";
-  msg.style.transition = "opacity 0.3s ease";
   document.body.appendChild(msg);
-  setTimeout(() => (msg.style.opacity = "1"), 10);
+  setTimeout(() => msg.classList.add("visible"), 10);
   setTimeout(() => {
-    msg.style.opacity = "0";
+    msg.classList.remove("visible");
     setTimeout(() => msg.remove(), 500);
   }, 4000);
 }

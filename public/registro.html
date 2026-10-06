@@ -5,24 +5,55 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Registro - Bomberos Voluntarios de Colón</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <link rel="stylesheet" href="css/registro.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+  <link rel="stylesheet" href="css/base.css?v=2" />
+  <link rel="stylesheet" href="css/registro.css?v=2" />
 </head>
 <body>
-  <div id="formContainer">
-    <img src="logo.png" alt="Logo Bomberos" />
-    <h1>Solicitar Acceso</h1>
-    <p>Completá tus datos. Un administrador aprobará tu solicitud.</p>
-
-    <input type="text" id="nombreInput" placeholder="Nombre" autocomplete="off" />
-    <input type="text" id="apellidoInput" placeholder="Apellido" autocomplete="off" />
-    <input type="email" id="mailInput" placeholder="Correo electrónico (será tu usuario)" autocomplete="off" />
-    <input type="password" id="passwordInput" placeholder="Contraseña" />
-    <input type="password" id="confirmInput" placeholder="Confirmar contraseña" />
-
-    <button id="registrarBtn">Solicitar acceso</button>
-    <a href="sender.html" class="volver">⬅ Volver al inicio</a>
+  <div class="auth">
+    <aside class="auth-side">
+      <img src="logo.png" alt="Logo Bomberos" class="logo" />
+      <div>
+        <span class="eyebrow">Nueva cuenta</span>
+        <h2>Solicitar<br>acceso</h2>
+        <p>Completá tus datos. Un administrador revisa y aprueba cada solicitud.</p>
+      </div>
+    </aside>
+    <div class="auth-main">
+      <div id="formContainer" class="auth-form">
+        <h1>Tus datos</h1>
+        <div class="campos">
+          <div class="field">
+            <label for="nombreInput">Nombre</label>
+            <input type="text" id="nombreInput" placeholder="Nombre" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label for="apellidoInput">Apellido</label>
+            <input type="text" id="apellidoInput" placeholder="Apellido" autocomplete="off" />
+          </div>
+          <div class="field full">
+            <label for="mailInput">Correo electrónico</label>
+            <input type="email" id="mailInput" placeholder="Será tu usuario" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label for="passwordInput">Contraseña</label>
+            <input type="password" id="passwordInput" placeholder="Contraseña" />
+          </div>
+          <div class="field">
+            <label for="confirmInput">Confirmar</label>
+            <input type="password" id="confirmInput" placeholder="Repetila" />
+          </div>
+        </div>
+        <button id="registrarBtn" class="btn-red btn-block">Solicitar acceso</button>
+        <div class="auth-links">
+          <a href="sender.html" class="volver">← Volver al inicio</a>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <script src="js/registro.js"></script>
+  <script src="js/registro.js?v=2"></script>
 </body>
 </html>

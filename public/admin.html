@@ -5,46 +5,77 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Panel Admin - Bomberos Voluntarios de Colón</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <link rel="stylesheet" href="css/admin.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+  <link rel="stylesheet" href="css/base.css?v=2" />
+  <link rel="stylesheet" href="css/admin.css?v=2" />
 </head>
-<body>
+<body class="app-bg">
 
   <!-- Login admin -->
-  <div id="loginAdmin">
-    <img src="logo.png" alt="Logo Bomberos" />
-    <h1>Panel Administrador</h1>
-    <p>Ingresá la contraseña de administrador</p>
-    <input type="text" id="adminUser" placeholder="Usuario (email)" autocomplete="off" />
-    <input type="password" id="adminPass" placeholder="Contraseña" />
-    <button id="loginAdminBtn">Ingresar</button>
-    <a href="sender.html" class="volver">⬅ Volver</a>
+  <div id="loginAdmin" class="auth">
+    <aside class="auth-side">
+      <img src="logo.png" alt="Logo Bomberos" class="logo" />
+      <div>
+        <span class="eyebrow">Acceso restringido</span>
+        <h2>Panel de<br>administración</h2>
+        <p>Aprobación de usuarios y permisos del sistema de alertas.</p>
+      </div>
+    </aside>
+    <div class="auth-main">
+      <div class="auth-form">
+        <h1>Ingresar</h1>
+        <p>Solo para cuentas con rol de administrador.</p>
+        <div class="field">
+          <label for="adminUser">Usuario</label>
+          <input type="text" id="adminUser" placeholder="tu@correo.com" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label for="adminPass">Contraseña</label>
+          <input type="password" id="adminPass" placeholder="Contraseña" />
+        </div>
+        <button id="loginAdminBtn" class="btn-red btn-block">Ingresar</button>
+        <div class="auth-links">
+          <a href="sender.html" class="volver">← Volver</a>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Panel principal -->
   <div id="panelAdmin" style="display:none;">
-    <header>
-      <img src="logo.png" alt="Logo Bomberos" />
-      <h1>Panel de Administración</h1>
-      <button id="cerrarSesionAdminBtn">🚪 Cerrar sesión</button>
-      <a href="sender.html" class="volver">⬅ Volver</a>
+    <header class="appbar">
+      <img src="logo.png" alt="Logo Bomberos" class="logo" />
+      <div class="brand"><b>Administración</b><small>Colón · Buenos Aires</small></div>
+      <div class="spacer"></div>
+      <a href="sender.html" class="btn btn-sm volver">← Volver al envío</a>
+      <button id="cerrarSesionAdminBtn" class="btn-ghost btn-sm">Cerrar sesión</button>
     </header>
 
-    <section>
-      <h2>🕐 Solicitudes pendientes</h2>
-      <div id="pendientes">Cargando...</div>
-    </section>
+    <div class="content">
+      <div class="page-title">
+        <h1>Usuarios</h1>
+        <p>Aprobá solicitudes y gestioná permisos.</p>
+      </div>
 
-    <section>
-      <h2>✅ Usuarios aprobados</h2>
-      <div id="aprobados">Cargando...</div>
-    </section>
+      <section>
+        <h2>Solicitudes pendientes <span class="n" id="pendientesCount">0</span></h2>
+        <div id="pendientes"><p class="vacio">Cargando...</p></div>
+      </section>
 
-    <section>
-      <h2>❌ Usuarios rechazados</h2>
-      <div id="rechazados">Cargando...</div>
-    </section>
+      <section>
+        <h2>Usuarios aprobados <span class="n" id="aprobadosCount">0</span></h2>
+        <div id="aprobados"><p class="vacio">Cargando...</p></div>
+      </section>
+
+      <section>
+        <h2>Usuarios rechazados <span class="n" id="rechazadosCount">0</span></h2>
+        <div id="rechazados"><p class="vacio">Cargando...</p></div>
+      </section>
+    </div>
   </div>
 
-  <script src="js/admin.js?v=2"></script>
+  <script src="js/admin.js?v=3"></script>
 </body>
 </html>

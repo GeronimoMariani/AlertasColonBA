@@ -5,127 +5,194 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Enviar Alerta - Bomberos Voluntarios de Colón</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <link rel="stylesheet" href="css/sender.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+  <link rel="stylesheet" href="css/base.css?v=2" />
+  <link rel="stylesheet" href="css/sender.css?v=2" />
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 </head>
 
-<body>
+<body class="app-bg">
   <!-- Login -->
-  <div id="login">
-    <img src="logo.png" alt="Logo Bomberos" />
-    <h1>Acceso al Sistema</h1>
-    <p>Ingresá tu usuario y contraseña</p>
-    <input type="text" id="usuarioInput" placeholder="Usuario" autocomplete="off" />
-    <input type="password" id="passwordInput" placeholder="Contraseña" />
-    <button id="ingresarBtn">Ingresar</button>
-    <a href="#" id="olvidéBtn" class="registro-link">¿Olvidaste tu contraseña?</a>
-    <a href="registro.html" class="registro-link">¿No tenés cuenta? Solicitá acceso</a>
+  <div id="login" class="auth">
+    <aside class="auth-side">
+      <img src="logo.png" alt="Logo Bomberos" class="logo" />
+      <div>
+        <span class="eyebrow">Acceso restringido</span>
+        <h2>Central de<br>despacho</h2>
+        <p>Sistema de alertas del cuartel de Bomberos Voluntarios de Colón.</p>
+      </div>
+    </aside>
+    <div class="auth-main">
+      <div class="auth-form">
+        <h1>Ingresar</h1>
+        <p>Usá tu correo y contraseña.</p>
+        <div class="field">
+          <label for="usuarioInput">Usuario</label>
+          <input type="text" id="usuarioInput" placeholder="tu@correo.com" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label for="passwordInput">Contraseña</label>
+          <input type="password" id="passwordInput" placeholder="Contraseña" />
+        </div>
+        <button id="ingresarBtn" class="btn-red btn-block">Ingresar</button>
+        <div class="auth-links">
+          <a href="#" id="olvidéBtn">¿Olvidaste tu contraseña?</a>
+          <a href="registro.html">¿No tenés cuenta? <b>Solicitá acceso</b></a>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Panel principal -->
   <div id="main" style="display:none;">
-    <header>
-      <img src="logo.png" alt="Logo Bomberos" />
+    <header class="appbar">
+      <img src="logo.png" alt="Logo Bomberos" class="logo" />
+      <div class="brand"><b>Central de despacho</b><small>Colón · Buenos Aires</small></div>
+      <div class="spacer"></div>
+      <span class="chip chip-live"><span class="dot"></span><span id="visoresCount">0 visores</span></span>
       <div id="datetime"></div>
-      <button id="cerrarSesionBtn">🚪 Cerrar sesión</button>
+      <button id="cerrarSesionBtn" class="btn-ghost btn-sm">Cerrar sesión</button>
     </header>
 
-    <span id="visoresCount">📺 Visores conectados: 0</span>
+    <div class="content">
+      <div class="page-title">
+        <h1>Enviar alerta</h1>
+        <p>La alerta aparece al instante en todos los visores conectados.</p>
+      </div>
 
-    <h1>Enviar Alerta</h1>
+      <form id="alertForm" class="panel">
+        <div class="field full">
+          <span class="lbl">Tipo de siniestro</span>
+          <!-- El select guarda el valor; los botones solo lo eligen -->
+          <select id="tipo" required hidden>
+            <option value="Incendio">Incendio</option>
+            <option value="Forestal">Forestal</option>
+            <option value="Accidente Vehicular">Accidente Vehicular</option>
+            <option value="Rescate">Rescate</option>
+            <option value="Materiales Peligrosos">Materiales Peligrosos</option>
+          </select>
+          <div class="tipos" role="group" aria-label="Tipo de siniestro">
+            <button type="button" class="tipo-btn" data-tipo="Incendio">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-3 2-4 2-6 1 1 2 2 3 2 0-2-1-4 0-6z"/></svg>
+              Incendio
+            </button>
+            <button type="button" class="tipo-btn" data-tipo="Forestal">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l5 8h-3l4 6H6l4-6H7z"/><path d="M12 17v4"/></svg>
+              Forestal
+            </button>
+            <button type="button" class="tipo-btn" data-tipo="Accidente Vehicular">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 15l2-5h12l2 5v3H4z"/><circle cx="8" cy="18" r="1.5"/><circle cx="16" cy="18" r="1.5"/></svg>
+              Accidente vehicular
+            </button>
+            <button type="button" class="tipo-btn" data-tipo="Rescate">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 4v5M12 15v5M4 12h5M15 12h5"/></svg>
+              Rescate
+            </button>
+            <button type="button" class="tipo-btn" data-tipo="Materiales Peligrosos">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>
+              Materiales peligrosos
+            </button>
+          </div>
+        </div>
 
-    <form id="alertForm">
-      <label>Tipo de siniestro:</label>
-      <select id="tipo" required>
-        <option value="Incendio">Incendio</option>
-        <option value="Forestal">Forestal</option>
-        <option value="Accidente Vehicular">Accidente Vehicular</option>
-        <option value="Rescate">Rescate</option>
-        <option value="Materiales Peligrosos">Materiales Peligrosos</option>
-      </select>
+        <div class="field full">
+          <label for="direccion">Dirección</label>
+          <input type="text" id="direccion" placeholder="Ej: Calle 24 entre 49 y 50" required />
+        </div>
 
-      <label>Dirección:</label>
-      <input type="text" id="direccion" placeholder="Ej: Calle 24 entre 49 y 50" required />
+        <div class="field full">
+          <label for="descripcion">Descripción</label>
+          <textarea id="descripcion" rows="3" placeholder="Detalles del siniestro"></textarea>
+        </div>
 
-      <label>Descripción:</label>
-      <textarea id="descripcion" rows="3" placeholder="Detalles del siniestro"></textarea>
+        <div class="field">
+          <label for="despachadoPor">Despachado por</label>
+          <select id="despachadoPor" required>
+            <option value="GUM">GUM</option>
+            <option value="POLICÍA">POLICÍA</option>
+            <option value="CUARTEL 60">CUARTEL 60</option>
+          </select>
+        </div>
 
-      <label>Despachado por:</label>
-      <select id="despachadoPor" required>
-        <option value="GUM">GUM</option>
-        <option value="POLICÍA">POLICÍA</option>
-        <option value="CUARTEL 60">CUARTEL 60</option>
-      </select>
+        <div class="field">
+          <label for="contacto">Contacto</label>
+          <input type="text" id="contacto" placeholder="Número de la víctima" />
+        </div>
 
-      <label>Contacto:</label>
-      <input type="text" id="contacto" placeholder="Numero de la victima" />
+        <div class="acciones full">
+          <button type="submit" id="sendBtn" class="btn-red">Enviar alerta</button>
+          <button type="button" id="editarAlertaBtn" class="btn-amber" style="display:none;">Editar última alerta</button>
+          <div id="loading">Enviando alerta<span>...</span></div>
+        </div>
+      </form>
 
-      <button type="submit" id="sendBtn">🚨 ENVIAR ALERTA</button>
-      <button type="button" id="editarAlertaBtn" style="display:none; background-color:#e67e00;">✏️ EDITAR ÚLTIMA ALERTA</button>
-      <div id="loading">📡 Enviando alerta<span>...</span></div>
-    </form>
-
-    <div style="margin-top:30px; width:100%; max-width:800px; text-align:left; display:flex; gap:12px;">
-      <a href="historial.html" id="verHistorialBtn">📜 Ver historial de alertas</a>
-      <a href="estadisticas.html" id="verEstadisticasBtn">📊 Ver estadísticas</a>
+      <div class="subnav">
+        <a href="historial.html" id="verHistorialBtn" class="btn">Historial de alertas</a>
+        <a href="estadisticas.html" id="verEstadisticasBtn" class="btn">Estadísticas</a>
+      </div>
     </div>
   </div>
 
-  <div id="modalConfirm" style="display:none;">
-    <div id="modalBox">
-      <h2>⚠️ Confirmar Alerta</h2>
-      <p id="modalTexto"></p>
-      <div id="modalBotones">
+  <!-- Modal confirmar alerta -->
+  <div id="modalConfirm" class="overlay" style="display:none;">
+    <div id="modalBox" class="modal modal-red">
+      <div class="modal-head"><h2>Confirmar alerta</h2></div>
+      <div class="modal-body">
+        <p class="modal-aviso">Se va a enviar a todos los visores conectados.</p>
+        <div id="modalTexto"></div>
+      </div>
+      <div id="modalBotones" class="modal-foot">
         <button id="modalCancelar">Cancelar</button>
-        <button id="modalConfirmar">Enviar</button>
+        <button id="modalConfirmar" class="btn-red">Enviar ahora</button>
       </div>
     </div>
   </div>
 
   <!-- Modal editar alerta -->
-  <div id="modalEditar" style="display:none;">
-    <div id="modalEditarBox">
-      <h2>✏️ Editar última alerta</h2>
-      <label>Tipo de siniestro:</label>
-      <select id="editTipo">
-        <option value="Incendio">Incendio</option>
-        <option value="Forestal">Forestal</option>
-        <option value="Accidente Vehicular">Accidente Vehicular</option>
-        <option value="Rescate">Rescate</option>
-        <option value="Materiales Peligrosos">Materiales Peligrosos</option>
-      </select>
-      <label>Dirección:</label>
-      <input type="text" id="editDireccion" />
-      <label>Descripción:</label>
-      <textarea id="editDescripcion" rows="3"></textarea>
-      <label>Despachado por:</label>
-      <select id="editDespachadoPor">
-        <option value="GUM">GUM</option>
-        <option value="POLICÍA">POLICÍA</option>
-        <option value="CUARTEL 60">CUARTEL 60</option>
-      </select>
-      <label>Contacto:</label>
-      <input type="text" id="editContacto" />
-      <div id="modalEditarBotones">
+  <div id="modalEditar" class="overlay" style="display:none;">
+    <div id="modalEditarBox" class="modal modal-amber">
+      <div class="modal-head"><h2>Editar última alerta</h2></div>
+      <div class="modal-body">
+        <div class="field">
+          <label for="editTipo">Tipo de siniestro</label>
+          <select id="editTipo">
+            <option value="Incendio">Incendio</option>
+            <option value="Forestal">Forestal</option>
+            <option value="Accidente Vehicular">Accidente Vehicular</option>
+            <option value="Rescate">Rescate</option>
+            <option value="Materiales Peligrosos">Materiales Peligrosos</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="editDireccion">Dirección</label>
+          <input type="text" id="editDireccion" />
+        </div>
+        <div class="field">
+          <label for="editDescripcion">Descripción</label>
+          <textarea id="editDescripcion" rows="3"></textarea>
+        </div>
+        <div class="field">
+          <label for="editDespachadoPor">Despachado por</label>
+          <select id="editDespachadoPor">
+            <option value="GUM">GUM</option>
+            <option value="POLICÍA">POLICÍA</option>
+            <option value="CUARTEL 60">CUARTEL 60</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="editContacto">Contacto</label>
+          <input type="text" id="editContacto" />
+        </div>
+      </div>
+      <div id="modalEditarBotones" class="modal-foot">
         <button id="modalEditarCancelar">Cancelar</button>
-        <button id="modalEditarConfirmar">Guardar cambios</button>
+        <button id="modalEditarConfirmar" class="btn-amber">Guardar cambios</button>
       </div>
     </div>
   </div>
 
-  <script type="module" src="js/sender.js?v=6"></script>
+  <script type="module" src="js/sender.js?v=7"></script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -71,8 +71,6 @@ function cerrarSesion() {
   reconectarSocket();
   document.getElementById("main").style.display = "none";
   document.getElementById("login").style.display = "flex";
-  document.getElementById("login").style.flexDirection = "column";
-  document.getElementById("login").style.alignItems = "center";
   document.getElementById("usuarioInput").value = "";
   document.getElementById("passwordInput").value = "";
 }
@@ -149,15 +147,41 @@ async function loginUsuario() {
 
 document.getElementById("cerrarSesionBtn").addEventListener("click", cerrarSesion);
 
+// --- Selector de tipo: los botones eligen el valor del select oculto #tipo ---
+const tipoSelect = document.getElementById("tipo");
+const tipoBtns = document.querySelectorAll(".tipo-btn");
+
+function marcarTipo() {
+  tipoBtns.forEach(b => {
+    const activo = b.dataset.tipo === tipoSelect.value;
+    b.classList.toggle("activo", activo);
+    b.setAttribute("aria-pressed", activo);
+  });
+}
+
+tipoBtns.forEach(b => b.addEventListener("click", () => {
+  tipoSelect.value = b.dataset.tipo;
+  marcarTipo();
+}));
+
+// Al resetear el formulario el select vuelve al primer tipo; se actualizan los botones
+document.getElementById("alertForm").addEventListener("reset", () => setTimeout(marcarTipo, 0));
+marcarTipo();
+
 document.getElementById("alertForm").addEventListener("submit", (e) => {
   e.preventDefault();
 
   const tipo = document.getElementById("tipo").value;
   const direccion = document.getElementById("direccion").value;
 
+  const despachadoPor = document.getElementById("despachadoPor").value;
+
   document.getElementById("modalTexto").innerHTML = `
-    <strong>Tipo:</strong> ${escapeHtml(tipo)}<br>
-    <strong>Dirección:</strong> ${escapeHtml(direccion)}
+    <dl class="kv">
+      <dt>Tipo</dt><dd>${escapeHtml(tipo)}</dd>
+      <dt>Dirección</dt><dd>${escapeHtml(direccion)}</dd>
+      <dt>Despachado por</dt><dd>${escapeHtml(despachadoPor)}</dd>
+    </dl>
   `;
   document.getElementById("modalConfirm").style.display = "flex";
 });
@@ -277,26 +301,15 @@ document.getElementById("modalEditarConfirmar").addEventListener("click", async 
   }
 });
 
+// El aspecto del aviso está en base.css (.toast)
 function showMessage(text, type = "info") {
   const msg = document.createElement("div");
+  msg.className = `toast toast-${type}`;
   msg.textContent = text;
-  msg.style.position = "fixed";
-  msg.style.top = "20px";
-  msg.style.left = "50%";
-  msg.style.transform = "translateX(-50%)";
-  msg.style.background = type === "success" ? "#28a745" : "#dc3545";
-  msg.style.color = "#fff";
-  msg.style.padding = "12px 20px";
-  msg.style.borderRadius = "8px";
-  msg.style.fontSize = "1rem";
-  msg.style.zIndex = "9999";
-  msg.style.boxShadow = "0 0 10px rgba(0,0,0,0.3)";
-  msg.style.opacity = "0";
-  msg.style.transition = "opacity 0.3s ease";
   document.body.appendChild(msg);
-  setTimeout(() => (msg.style.opacity = "1"), 10);
+  setTimeout(() => msg.classList.add("visible"), 10);
   setTimeout(() => {
-    msg.style.opacity = "0";
+    msg.classList.remove("visible");
     setTimeout(() => msg.remove(), 500);
   }, 4000);
 }
@@ -327,5 +340,5 @@ document.getElementById("olvidéBtn").addEventListener("click", async () => {
 
 socket.on("visoresCount", (count) => {
   const el = document.getElementById("visoresCount");
-  if (el) el.textContent = `📺 Visores conectados: ${count}`;
+  if (el) el.textContent = `${count} visor${count !== 1 ? "es" : ""}`;
 });

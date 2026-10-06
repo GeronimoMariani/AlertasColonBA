@@ -5,45 +5,73 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Historial de Alertas - Bomberos Voluntarios de Colón</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <link rel="stylesheet" href="css/historial.css"> 
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+  <link rel="stylesheet" href="css/base.css?v=2" />
+  <link rel="stylesheet" href="css/historial.css?v=2" />
 </head>
-<body>
-  <header>
-    <img src="logo.png" alt="Logo Bomberos" />
-    <h1>Historial de Alertas</h1>
+<body class="app-bg">
+  <header class="appbar">
+    <img src="logo.png" alt="Logo Bomberos" class="logo" />
+    <div class="brand"><b>Central de despacho</b><small>Colón · Buenos Aires</small></div>
+    <div class="spacer"></div>
+    <nav class="nav">
+      <a href="sender.html">Enviar</a>
+      <a href="historial.html" class="activo">Historial</a>
+      <a href="estadisticas.html">Estadísticas</a>
+    </nav>
   </header>
 
-  <!-- Filtros -->
-  <div id="filtros">
-    <select id="filtroTipo">
-      <option value="">Todos los tipos</option>
-      <option value="Incendio">Incendio</option>
-      <option value="Forestal">Forestal</option>
-      <option value="Accidente Vehicular">Accidente Vehicular</option>
-      <option value="Rescate">Rescate</option>
-      <option value="Materiales Peligrosos">Materiales Peligrosos</option>
-    </select>
+  <div class="content">
+    <div class="page-title">
+      <h1>Historial de alertas</h1>
+    </div>
 
-    <select id="filtroDespachadoPor">
-      <option value="">Todos los despachadores</option>
-      <option value="GUM">GUM</option>
-      <option value="POLICÍA">POLICÍA</option>
-      <option value="CUARTEL 60">CUARTEL 60</option>
-    </select>
+    <!-- Filtros -->
+    <div id="filtros">
+      <div class="field">
+        <label for="filtroTipo">Tipo</label>
+        <select id="filtroTipo">
+          <option value="">Todos los tipos</option>
+          <option value="Incendio">Incendio</option>
+          <option value="Forestal">Forestal</option>
+          <option value="Accidente Vehicular">Accidente Vehicular</option>
+          <option value="Rescate">Rescate</option>
+          <option value="Materiales Peligrosos">Materiales Peligrosos</option>
+        </select>
+      </div>
 
-    <input type="date" id="filtroFechaDesde" placeholder="Desde" />
-    <input type="date" id="filtroFechaHasta" placeholder="Hasta" />
+      <div class="field">
+        <label for="filtroDespachadoPor">Despachado por</label>
+        <select id="filtroDespachadoPor">
+          <option value="">Todos</option>
+          <option value="GUM">GUM</option>
+          <option value="POLICÍA">POLICÍA</option>
+          <option value="CUARTEL 60">CUARTEL 60</option>
+        </select>
+      </div>
 
-    <button id="filtrarBtn">🔍 Filtrar</button>
-    <button id="limpiarBtn">✖ Limpiar</button>
+      <div class="field">
+        <label for="filtroFechaDesde">Desde</label>
+        <input type="date" id="filtroFechaDesde" />
+      </div>
+
+      <div class="field">
+        <label for="filtroFechaHasta">Hasta</label>
+        <input type="date" id="filtroFechaHasta" />
+      </div>
+
+      <div class="filtros-acciones">
+        <button id="filtrarBtn" class="btn-red">Filtrar</button>
+        <button id="limpiarBtn" class="btn-ghost">Limpiar</button>
+      </div>
+    </div>
+
+    <p id="resultadoCount"></p>
+    <div id="alertasContainer"><p class="vacio">Cargando alertas...</p></div>
   </div>
 
-  <p id="resultadoCount"></p>
-  <div id="alertasContainer">Cargando alertas...</div>
-
-  <a href="sender.html" class="volver">⬅ Volver al envío</a>
-
-  <script type="module" src="js/historial.js?v=2"></script>
+  <script type="module" src="js/historial.js?v=3"></script>
 </body>
 </html>
-
