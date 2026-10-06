@@ -4,6 +4,10 @@ const { contextBridge, shell } = require('electron');
 
 // Exponemos una API global llamada 'electronAPI' al front-end
 contextBridge.exposeInMainWorld('electronAPI', {
-  // Una función que abre URLs en el navegador externo usando la API shell de Electron
-  openExternal: (url) => shell.openExternal(url)
+  // Abre en el navegador externo solo las descargas de nuestro repo (nunca cualquier URL o protocolo)
+  openExternal: (url) => {
+    if (typeof url === "string" && url.startsWith("https://github.com/GeronimoMariani/AlertasColonBA/")) {
+      return shell.openExternal(url);
+    }
+  }
 });

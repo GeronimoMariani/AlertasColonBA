@@ -42,26 +42,15 @@ async function registrar() {
   }
 }
 
+// El aspecto del aviso está en base.css (.toast)
 function showMessage(text, type = "info") {
   const msg = document.createElement("div");
+  msg.className = `toast toast-${type}`;
   msg.textContent = text;
-  msg.style.position = "fixed";
-  msg.style.top = "20px";
-  msg.style.left = "50%";
-  msg.style.transform = "translateX(-50%)";
-  msg.style.background = type === "success" ? "#28a745" : "#dc3545";
-  msg.style.color = "#fff";
-  msg.style.padding = "12px 20px";
-  msg.style.borderRadius = "8px";
-  msg.style.fontSize = "1rem";
-  msg.style.zIndex = "9999";
-  msg.style.boxShadow = "0 0 10px rgba(0,0,0,0.3)";
-  msg.style.opacity = "0";
-  msg.style.transition = "opacity 0.3s ease";
   document.body.appendChild(msg);
-  setTimeout(() => (msg.style.opacity = "1"), 10);
+  setTimeout(() => msg.classList.add("visible"), 10);
   setTimeout(() => {
-    msg.style.opacity = "0";
+    msg.classList.remove("visible");
     setTimeout(() => msg.remove(), 500);
   }, 4000);
 }

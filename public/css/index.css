@@ -1,114 +1,108 @@
-/* --- Estilo general --- */
+/* --- Portada --- */
 body {
-  margin: 0;
-  padding: 0;
-  height: 100vh;
-  background: linear-gradient(180deg, #000000 0%, #1a0000 100%);
-  color: white;
-  font-family: 'Segoe UI', sans-serif;
   display: flex;
-  justify-content: center;
   align-items: center;
-  position: relative; /* Añadido para posicionar el botón superior derecho */
+  justify-content: center;
+  padding: 80px 20px;
+  position: relative;
+  overflow-x: hidden;
+  background:
+    radial-gradient(640px 420px at 50% 42%, rgba(158, 13, 11, 0.28), transparent 70%),
+    var(--bg);
 }
 
-/* --- Contenedor principal --- */
+/* Cuadrícula tenue de fondo */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: 0.25;
+  -webkit-mask-image: radial-gradient(closest-side, #000, transparent);
+  mask-image: radial-gradient(closest-side, #000, transparent);
+  pointer-events: none;
+}
+
+/* --- Contenido central --- */
 .container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
   text-align: center;
-  animation: fadeIn 1.5s ease;
-}
-
-/* --- Logo --- */
-.logo-section {
-  margin-bottom: 20px;
+  animation: fadeIn 1s ease;
 }
 
 .logo {
   width: 140px;
-  height: auto;
-  animation: pulse 2.5s infinite;
+  height: 140px;
+  filter: drop-shadow(0 10px 40px rgba(216, 38, 30, 0.35));
 }
 
-/* --- Textos --- */
+.text-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sub {
+  font: 500 0.8rem var(--f-mono);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 .text-section h1 {
-  font-size: 2.2rem;
-  color: #ff1a1a;
-  margin-bottom: 10px;
-  text-shadow: 0 0 10px #ff0000aa;
+  font: 800 clamp(2.8rem, 7vw, 4.2rem)/0.95 var(--f-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-.text-section h2 {
-  font-size: 1.2rem;
-  color: #ccc;
-  margin-bottom: 30px;
+.text-section h1 em {
+  font-style: normal;
+  color: var(--red);
 }
 
-/* --- Botón General --- */
-.btn {
-  background-color: #e60000;
-  color: white;
-  text-decoration: none;
-  font-weight: bold;
-  padding: 14px 30px;
-  border-radius: 8px;
-  box-shadow: 0 0 20px #ff0000aa;
-  transition: 0.3s;
-  display: inline-block; /* Asegura que los botones se muestren correctamente */
+.btn-entrar {
+  margin-top: 8px;
+  padding: 16px 30px;
+  font-size: 1.05rem;
 }
 
-.btn:hover {
-  background-color: #ff1a1a;
-  box-shadow: 0 0 30px #ff0000cc;
-  transform: scale(1.05);
-}
-
-/* --- ESTILO NUEVO PARA EL BOTÓN BLANCO --- */
-.secondary-btn {
-    background-color: #ffffff; /* Fondo blanco */
-    color: #000000;             /* Texto negro */
-    box-shadow: 0 0 15px #ffffffaa; /* Sombra blanca */
-    padding: 10px 20px;         /* Un poco más pequeño */
-    font-size: 0.9rem;
-}
-
-.secondary-btn:hover {
-    background-color: #f0f0f0;
-    box-shadow: 0 0 25px #ffffffcc;
-    transform: scale(1.05);
-}
-
-/* --- POSICIONAMIENTO DEL BOTÓN DE DESCARGA (sección) --- */
-#app-download-section {
-    position: absolute; /* Posicionamiento absoluto respecto al body */
-    top: 20px;          /* Arriba */
-    right: 20px;        /* A la derecha */
-    text-align: right;
-    /* Estilos para el texto de carga o mensaje */
-    font-size: 0.8rem;
-    color: #aaa;
-}
-
-/* Oculta este texto por defecto si usas JS para mostrar/ocultar el botón */
-#app-download-section p {
-    margin: 0;
-}
-
-
-/* --- Footer --- */
 footer {
-  margin-top: 40px;
-  color: #777;
-  font-size: 0.9rem;
+  margin-top: 24px;
+  font: 0.75rem var(--f-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
 }
 
-/* --- Animaciones --- */
-@keyframes pulse {
-  0%, 100% { transform: scale(1); opacity: 0.9; }
-  50% { transform: scale(1.05); opacity: 1; }
+/* --- Descarga de la app (arriba a la derecha) --- */
+#app-download-section {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  text-align: right;
+  z-index: 1;
+}
+
+#app-download-section p {
+  font: 0.75rem var(--f-mono);
+  letter-spacing: 0.06em;
+  color: var(--faint);
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .container {
+    animation: none;
+  }
+}

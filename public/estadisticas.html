@@ -5,40 +5,62 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Estadísticas - Bomberos Voluntarios de Colón</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <link rel="stylesheet" href="css/estadisticas.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+  <link rel="stylesheet" href="css/base.css?v=2" />
+  <link rel="stylesheet" href="css/estadisticas.css?v=2" />
 </head>
-<body>
-  <header>
-    <img src="logo.png" alt="Logo Bomberos" />
-    <h1>Estadísticas</h1>
+<body class="app-bg">
+  <header class="appbar">
+    <img src="logo.png" alt="Logo Bomberos" class="logo" />
+    <div class="brand"><b>Central de despacho</b><small>Colón · Buenos Aires</small></div>
+    <div class="spacer"></div>
+    <nav class="nav">
+      <a href="sender.html">Enviar</a>
+      <a href="historial.html">Historial</a>
+      <a href="estadisticas.html" class="activo">Estadísticas</a>
+    </nav>
   </header>
 
-  <div id="statsContainer">
-
-    <div class="stat-card">
-      <div class="stat-label">Total de alertas</div>
-      <div class="stat-value" id="totalAlertas">—</div>
+  <div class="content">
+    <div class="page-title">
+      <h1>Estadísticas</h1>
     </div>
 
-    <div class="stat-card">
-      <div class="stat-label">Tipo más frecuente</div>
-      <div class="stat-value" id="tipoFrecuente">—</div>
+    <div id="statsContainer">
+      <div class="stat-card">
+        <span class="lbl">Total de alertas</span>
+        <div class="stat-value" id="totalAlertas">—</div>
+        <small>desde el inicio del registro</small>
+      </div>
+
+      <div class="stat-card">
+        <span class="lbl">Tipo más frecuente</span>
+        <div class="stat-value texto" id="tipoFrecuente">—</div>
+        <small id="tipoFrecuenteDetalle"></small>
+      </div>
+
+      <div class="stat-card">
+        <span class="lbl">Este mes</span>
+        <div class="stat-value" id="alertasMes">—</div>
+        <small id="mesActual"></small>
+      </div>
     </div>
 
+    <div class="graficos">
+      <div id="mesContainer" class="panel">
+        <h2>Alertas por mes</h2>
+        <div id="graficoMes"></div>
+      </div>
+
+      <div id="tiposContainer" class="panel">
+        <h2>Alertas por tipo</h2>
+        <div id="graficoTipos"></div>
+      </div>
+    </div>
   </div>
 
-  <div id="mesContainer">
-    <h2>Alertas por mes</h2>
-    <div id="graficoMes"></div>
-  </div>
-
-  <div id="tiposContainer">
-    <h2>Alertas por tipo</h2>
-    <div id="graficoTipos"></div>
-  </div>
-
-  <a href="sender.html" class="volver">⬅ Volver al envío</a>
-
-  <script type="module" src="js/estadisticas.js"></script>
+  <script type="module" src="js/estadisticas.js?v=3"></script>
 </body>
 </html>

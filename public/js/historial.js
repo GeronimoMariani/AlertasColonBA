@@ -24,7 +24,7 @@ async function cargarAlertas() {
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
-            contenedor.innerHTML = "<p>No hay alertas registradas.</p>";
+            contenedor.innerHTML = `<p class="vacio">No hay alertas registradas.</p>`;
             return;
         }
 
@@ -32,13 +32,31 @@ async function cargarAlertas() {
         renderAlertas(todasLasAlertas);
     } catch (error) {
         console.error(error);
-        contenedor.innerHTML = "<p>Error al cargar las alertas.</p>";
+        contenedor.innerHTML = `<p class="vacio">Error al cargar las alertas.</p>`;
     }
 }
 
+function escapeHtml(str) {
+    return String(str ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+// Clase de color del borde según el tipo de siniestro (ver historial.css)
+const CLASE_TIPO = {
+    "Incendio": "t-incendio",
+    "Forestal": "t-forestal",
+    "Accidente Vehicular": "t-accidente",
+    "Rescate": "t-rescate",
+    "Materiales Peligrosos": "t-matpel",
+};
+
 function renderAlertas(alertas) {
     if (alertas.length === 0) {
-        contenedor.innerHTML = "<p>No hay alertas que coincidan con los filtros.</p>";
+        contenedor.innerHTML = `<p class="vacio">No hay alertas que coincidan con los filtros.</p>`;
         resultadoCount.textContent = "";
         return;
     }
@@ -48,31 +66,24 @@ function renderAlertas(alertas) {
 
     alertas.forEach(data => {
         const card = document.createElement("div");
-        card.className = "alert-card";
+        card.className = `alert-card ${CLASE_TIPO[data.tipo] || ""}`;
 
         const timestampDate = new Date(data.timestamp?.toDate?.() || data.timestamp);
-        const formattedDate = timestampDate.toLocaleString("es-AR", {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true,
-            timeZone: "America/Argentina/Buenos_Aires"
-        });
+        const timeZone = "America/Argentina/Buenos_Aires";
+        const hora = timestampDate.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone });
+        const fecha = timestampDate.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone });
 
         card.innerHTML = `
-            <div class="alert-header">
-                <span>🚨 ${data.tipo}</span>
-                <span>${formattedDate}</span>
-            </div>
-            <div class="alert-body">
-                <p><strong>Dirección:</strong> ${data.direccion}</p>
-                <p><strong>Descripción:</strong> ${data.descripcion}</p>
-                <p><strong>Despachado por:</strong> ${data.despachadoPor}</p>
-                <p><strong>Contacto:</strong> ${data.contacto || "N/A"}</p>
-                ${data.enviadoPor ? `<p><strong>Cuenta que envió:</strong> ${data.enviadoPor}</p>` : ""}
+            <i class="sev"></i>
+            <div class="alert-time"><b>${hora}</b>${fecha}</div>
+            <div class="alert-main">
+                <h2>${escapeHtml(data.tipo)}</h2>
+                <p>${escapeHtml(data.direccion)}${data.descripcion ? ` · ${escapeHtml(data.descripcion)}` : ""}</p>
+                <div class="alert-meta">
+                    <span><b>Despachó</b>${escapeHtml(data.despachadoPor)}</span>
+                    <span><b>Contacto</b>${escapeHtml(data.contacto || "N/A")}</span>
+                    ${data.enviadoPor ? `<span><b>Cuenta</b>${escapeHtml(data.enviadoPor)}</span>` : ""}
+                </div>
             </div>
         `;
         contenedor.appendChild(card);

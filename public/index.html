@@ -5,39 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sistema de Alertas - Bomberos Colón BA</title>
   <link rel="icon" href="logo.png">
-  <link rel="stylesheet" href="css/index.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+  <link rel="stylesheet" href="css/base.css?v=2">
+  <link rel="stylesheet" href="css/index.css?v=2">
 </head>
 <body>
-  <div class="container">
-    <div class="logo-section">
-      <img src="logo.png" alt="Logo Bomberos" class="logo">
-    </div>
-
-    <div class="text-section">
-      <h1>SISTEMA DE ALERTAS</h1>
-      <h2>Bomberos Voluntarios de Colón BA</h2>
-    </div>
-
-    <div class="button-section">
-      <a href="visor.html" class="btn">🚒 Ingresar al Visor</a>
-      
-      <!-- Nuevo contenedor para la descarga de la App de Escritorio -->
-      <div id="app-download-section">
-        <a id="download-link" href="#" class="btn secondary-btn" style="display:none;" target="_blank">
-            ⬇️ Descargar App Escritorio v<span id="app-version-text">...</span>
-        </a>
-        <p id="loading-text">Verificando última versión...</p>
-      </div>
-    </div>
-
-    <footer>
-      <p>Acceso restringido al panel de despacho</p>
-    </footer>
+  <!-- Descarga de la app de escritorio -->
+  <div id="app-download-section">
+    <a id="download-link" href="#" class="btn btn-sm" style="display:none;" target="_blank">
+      Descargar app de escritorio · v<span id="app-version-text">...</span>
+    </a>
+    <p id="loading-text">Verificando última versión...</p>
   </div>
 
-  <!-- AHORA CARGAS EL SCRIPT EXTERNO AQUÍ -->
-  <script src="js/index.js"></script>
+  <div class="container">
+    <img src="logo.png" alt="Logo Bomberos" class="logo">
 
+    <div class="text-section">
+      <p class="sub">Bomberos Voluntarios · Colón BA</p>
+      <h1>Sistema de<br><em>alertas</em></h1>
+    </div>
+
+    <a href="visor.html" class="btn btn-red btn-entrar">Ingresar al visor →</a>
+
+    <footer>Acceso restringido al panel de despacho</footer>
+  </div>
+
+  <script src="js/index.js"></script>
 </body>
 </html>
-

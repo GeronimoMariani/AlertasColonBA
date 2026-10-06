@@ -1,132 +1,280 @@
+/* --- Visor: pantalla del cuartel --- */
 body {
-  margin: 0;
-  font-family: "Segoe UI", Arial, sans-serif;
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
   height: 100vh;
   overflow: hidden;
-  background: linear-gradient(135deg, #1a0000, #000000);
-  background-size: 400% 400%;
-  animation: gradientMove 20s ease infinite;
-}
-
-@keyframes gradientMove {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 20px 40px;
-  background: rgba(0, 0, 0, 0.5);
-  box-shadow: 0 2px 10px rgba(0,0,0,0.6);
+  flex-direction: column;
+  background: #050404;
 }
 
-header img {
-  width: 110px;
+/* --- Barra superior --- */
+.appbar {
+  background: transparent;
+  border-bottom-color: #1b1818;
+  padding: 18px 40px;
+  backdrop-filter: none;
+}
+
+.appbar .logo {
+  width: 56px;
+  height: 56px;
+}
+
+.brand b {
+  font-size: 1.2rem;
 }
 
 #datetime {
-  font-size: 1.6rem;
-  color: #ddd;
   text-align: right;
 }
 
-main {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex-grow: 1;
-  text-align: center;
-  width: 100%;
-  padding: 20px;
+#hora {
+  font: 500 clamp(1.8rem, 2.6vw, 2.6rem)/1 var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
 }
 
-h1 {
-  font-size: 5rem;
-  color: #ff0000;
-  margin-bottom: 25px;
-  animation: blink 1s infinite;
+#fecha {
+  margin-top: 6px;
+  font: 0.85rem var(--f-mono);
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  text-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+  color: var(--faint);
 }
 
-h2 {
-  font-size: 2.8rem;
-  margin-bottom: 15px;
+/* --- Zona central --- */
+main {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+#alertContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* --- Franja de alarma --- */
+.alarm-band {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 14px 40px;
+  background: var(--red);
   color: #fff;
-  text-shadow: 0 0 15px rgba(255,255,255,0.3);
+  font: 700 clamp(1rem, 1.4vw, 1.4rem)/1 var(--f-display);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  animation: band 1.1s steps(1) infinite;
 }
 
-p {
-  font-size: 2rem;
-  margin: 8px 0;
+.alarm-band.actualizada {
+  background: var(--amber);
+  color: #1a1200;
+  animation: band-amber 1.1s steps(1) 6;
 }
 
-.info {
-  font-size: 1.6rem;
-  color: #ccc;
+@keyframes band {
+  50% { background: var(--red-deep); }
 }
 
+@keyframes band-amber {
+  50% { background: #b37d00; }
+}
+
+/* --- Cuerpo de la alerta --- */
+.alert-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 26vw);
+  gap: 48px;
+  padding: 44px 40px;
+  background: radial-gradient(900px 600px at 20% 30%, rgba(216, 38, 30, 0.16), transparent 70%);
+  overflow: hidden;
+}
+
+.alert-body.actualizada {
+  background: radial-gradient(900px 600px at 20% 30%, rgba(242, 169, 0, 0.1), transparent 70%);
+}
+
+.alert-type {
+  font: 800 clamp(4rem, 9vw, 10rem)/0.88 var(--f-display);
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  color: #fff;
+  text-shadow: 0 0 40px rgba(216, 38, 30, 0.55);
+  overflow-wrap: anywhere;
+}
+
+.alert-addr {
+  margin-top: 28px;
+  font: 600 clamp(2rem, 3.4vw, 3.6rem)/1.1 var(--f-display);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+}
+
+.alert-addr small {
+  display: block;
+  font: 600 clamp(0.8rem, 0.9vw, 1rem) var(--f-mono);
+  letter-spacing: 0.2em;
+  color: var(--red);
+  margin-bottom: 10px;
+}
+
+.alert-body.actualizada .alert-addr small {
+  color: var(--amber);
+}
+
+.alert-desc {
+  margin-top: 22px;
+  font-size: clamp(1.3rem, 1.8vw, 2rem);
+  line-height: 1.4;
+  color: #d7cfcb;
+  max-width: 42ch;
+  overflow-wrap: anywhere;
+}
+
+/* Columna de datos de despacho */
+.alert-side {
+  margin: 0;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: #1b1818;
+  border: 1px solid #1b1818;
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.alert-side div {
+  background: #0c0b0b;
+  padding: 18px 22px;
+}
+
+.alert-side dt {
+  font: 600 0.75rem var(--f-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.alert-side dd {
+  margin: 8px 0 0;
+  font: 600 clamp(1.4rem, 1.9vw, 2rem)/1.15 var(--f-display);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.alert-side dd.mono {
+  font: 500 clamp(1.15rem, 1.5vw, 1.6rem)/1.3 var(--f-mono);
+  text-transform: none;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Sin alertas --- */
 #noAlertContainer {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  opacity: 0.9;
+  text-align: center;
 }
 
 #noAlertContainer img {
-  width: 250px;
-  margin-bottom: 25px;
-  filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.8));
+  width: clamp(180px, 18vw, 280px);
+  margin-bottom: 30px;
+  opacity: 0.92;
+  filter: grayscale(0.15) drop-shadow(0 0 50px rgba(216, 38, 30, 0.25));
 }
 
 #noAlertContainer h2 {
-  color: #eee;
-  font-size: 2.4rem;
-  letter-spacing: 1px;
-  text-shadow: 0 0 15px rgba(255,255,255,0.4);
+  font: 700 clamp(1.8rem, 2.6vw, 2.8rem) var(--f-display);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #cfc7c3;
 }
 
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+#noAlertContainer p {
+  margin-top: 10px;
+  font: 0.85rem var(--f-mono);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* --- Pie con estado de conexión --- */
+.visor-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 40px;
+  border-top: 1px solid #1b1818;
+  font: 0.75rem var(--f-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
 }
 
 #status {
-  position: fixed;
-  bottom: 10px;
-  right: 15px;
-  font-size: 1rem;
-  color: #fff;
-  opacity: 0.8;
-  font-family: Arial, sans-serif;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#status::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--faint);
+}
+
+#status.conectado {
+  color: var(--green);
+}
+
+#status.conectado::before {
+  background: var(--green);
+}
+
+#status.desconectado {
+  color: #f0645d;
+}
+
+#status.desconectado::before {
+  background: var(--red);
 }
 
 audio {
   display: none;
 }
 
-#badgeActualizada {
-  color: #e6b800;
-  font-size: 2rem;
-  font-weight: bold;
-  text-align: center;
-  margin-bottom: 15px;
-  animation: parpadeo 1s infinite;
-}
+/* --- Pantallas angostas --- */
+@media (max-width: 900px) {
+  body {
+    height: auto;
+    min-height: 100vh;
+    overflow: auto;
+  }
 
-@keyframes parpadeo {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  .appbar,
+  .alarm-band,
+  .visor-foot {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .alert-body {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding: 28px 20px;
+  }
 }
