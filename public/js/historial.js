@@ -36,6 +36,15 @@ async function cargarAlertas() {
     }
 }
 
+function escapeHtml(str) {
+    return String(str ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 function renderAlertas(alertas) {
     if (alertas.length === 0) {
         contenedor.innerHTML = "<p>No hay alertas que coincidan con los filtros.</p>";
@@ -64,15 +73,15 @@ function renderAlertas(alertas) {
 
         card.innerHTML = `
             <div class="alert-header">
-                <span>🚨 ${data.tipo}</span>
+                <span>🚨 ${escapeHtml(data.tipo)}</span>
                 <span>${formattedDate}</span>
             </div>
             <div class="alert-body">
-                <p><strong>Dirección:</strong> ${data.direccion}</p>
-                <p><strong>Descripción:</strong> ${data.descripcion}</p>
-                <p><strong>Despachado por:</strong> ${data.despachadoPor}</p>
-                <p><strong>Contacto:</strong> ${data.contacto || "N/A"}</p>
-                ${data.enviadoPor ? `<p><strong>Cuenta que envió:</strong> ${data.enviadoPor}</p>` : ""}
+                <p><strong>Dirección:</strong> ${escapeHtml(data.direccion)}</p>
+                <p><strong>Descripción:</strong> ${escapeHtml(data.descripcion)}</p>
+                <p><strong>Despachado por:</strong> ${escapeHtml(data.despachadoPor)}</p>
+                <p><strong>Contacto:</strong> ${escapeHtml(data.contacto || "N/A")}</p>
+                ${data.enviadoPor ? `<p><strong>Cuenta que envió:</strong> ${escapeHtml(data.enviadoPor)}</p>` : ""}
             </div>
         `;
         contenedor.appendChild(card);

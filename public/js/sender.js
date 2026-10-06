@@ -8,21 +8,67 @@ const socket = io(SERVER_URL, {
   reconnectionDelay: 2000,
   reconnectionDelayMax: 5000,
   timeout: 10000,
+  // Se lee en cada (re)conexión, así siempre viaja el token actual
+  auth: (cb) => {
+    const token = localStorage.getItem("loginToken");
+    cb(token ? { token } : {});
+  },
 });
 
 let alertaActiva = false;
 
+function escapeHtml(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// Revisa la fecha de vencimiento del token (la validación real la hace el servidor)
+function tokenVigente(token) {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return payload.exp * 1000 > Date.now();
+  } catch (e) {
+    return false;
+  }
+}
+
+function authHeaders() {
+  const token = localStorage.getItem("loginToken");
+  return { "Content-Type": "application/json", ...(token ? { "Authorization": `Bearer ${token}` } : {}) };
+}
+
+// Reconecta el socket para que el servidor tome el token nuevo (o su ausencia)
+function reconectarSocket() {
+  socket.disconnect();
+  socket.connect();
+}
+
+function sesionVencida(mensaje) {
+  showMessage(`❌ ${mensaje || "Tu sesión venció. Volvé a iniciar sesión."}`, "error");
+  // El formulario no se borra: al volver a entrar se puede reenviar enseguida
+  cerrarSesion();
+}
+
 // Verificar si ya está autenticado al cargar la página
 window.addEventListener("load", () => {
   const usuario = localStorage.getItem("usuarioLogueado");
-  if (usuario) {
+  const token = localStorage.getItem("loginToken");
+  if (usuario && token && tokenVigente(token)) {
     mostrarPanel();
+  } else if (usuario) {
+    sesionVencida();
   }
 });
 
 function cerrarSesion() {
   localStorage.removeItem("usuarioLogueado");
   localStorage.removeItem("rolUsuario");
+  localStorage.removeItem("loginToken");
+  reconectarSocket();
   document.getElementById("main").style.display = "none";
   document.getElementById("login").style.display = "flex";
   document.getElementById("login").style.flexDirection = "column";
@@ -90,6 +136,8 @@ async function loginUsuario() {
     if (res.ok && data.success) {
       localStorage.setItem("usuarioLogueado", data.usuario);
       localStorage.setItem("rolUsuario", data.rol);
+      localStorage.setItem("loginToken", data.token);
+      reconectarSocket();
       mostrarPanel();
     } else {
       showMessage(`❌ ${data.message || "Error al iniciar sesión."}`, "error");
@@ -108,8 +156,8 @@ document.getElementById("alertForm").addEventListener("submit", (e) => {
   const direccion = document.getElementById("direccion").value;
 
   document.getElementById("modalTexto").innerHTML = `
-    <strong>Tipo:</strong> ${tipo}<br>
-    <strong>Dirección:</strong> ${direccion}
+    <strong>Tipo:</strong> ${escapeHtml(tipo)}<br>
+    <strong>Dirección:</strong> ${escapeHtml(direccion)}
   `;
   document.getElementById("modalConfirm").style.display = "flex";
 });
@@ -137,16 +185,28 @@ document.getElementById("modalConfirmar").addEventListener("click", () => {
     enviadoPor: usuarioLogueado,
   };
 
-  socket.emit("sendAlert", data);
-
-  setTimeout(() => {
+  // Se espera la confirmación real del servidor antes de avisar que salió
+  socket.timeout(10000).emit("sendAlert", data, (err, resp) => {
     btn.disabled = false;
     loading.style.display = "none";
-    showMessage("✅ Alerta enviada correctamente", "success");
-    document.getElementById("alertForm").reset();
-    alertaActiva = true;
-    document.getElementById("editarAlertaBtn").style.display = "block";
-  }, 1000);
+
+    if (err) {
+      showMessage("⚠️ El servidor no confirmó la alerta. Revisá el visor antes de reenviar.", "error");
+      return;
+    }
+    if (resp && resp.ok) {
+      showMessage("✅ Alerta enviada correctamente", "success");
+      document.getElementById("alertForm").reset();
+      alertaActiva = true;
+      document.getElementById("editarAlertaBtn").style.display = "block";
+      return;
+    }
+    if (resp && resp.code === "AUTH") {
+      sesionVencida(resp.message);
+      return;
+    }
+    showMessage(`❌ ${(resp && resp.message) || "No se pudo enviar la alerta"}`, "error");
+  });
 });
 
 // Escuchar cuando se limpia la alerta para ocultar el botón editar
@@ -164,7 +224,8 @@ socket.on("alert", (data) => {
 // Botón editar
 document.getElementById("editarAlertaBtn").addEventListener("click", async () => {
   try {
-    const res = await fetch("/ultima-alerta");
+    const res = await fetch("/ultima-alerta", { headers: authHeaders() });
+    if (res.status === 401) return sesionVencida();
     const data = await res.json();
     if (!data) return showMessage("No hay alerta activa.", "error");
 
@@ -196,11 +257,15 @@ document.getElementById("modalEditarConfirmar").addEventListener("click", async 
   try {
     const res = await fetch("/editar-alerta", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders(),
       body: JSON.stringify(body)
     });
 
     const data = await res.json();
+    if (res.status === 401) {
+      document.getElementById("modalEditar").style.display = "none";
+      return sesionVencida(data.message);
+    }
     if (data.success) {
       document.getElementById("modalEditar").style.display = "none";
       showMessage("✅ Alerta actualizada correctamente.", "success");

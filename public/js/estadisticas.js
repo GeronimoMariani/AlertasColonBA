@@ -50,13 +50,22 @@ async function cargarEstadisticas() {
     }
 }
 
+function escapeHtml(str) {
+    return String(str ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 function renderBarras(containerId, datos) {
     const contenedor = document.getElementById(containerId);
     const max = Math.max(...Object.values(datos));
 
     contenedor.innerHTML = Object.entries(datos).map(([label, valor]) => `
         <div class="barra-row">
-            <span class="barra-label">${label}</span>
+            <span class="barra-label">${escapeHtml(label)}</span>
             <div class="barra-wrap">
                 <div class="barra" style="width: ${(valor / max) * 100}%"></div>
             </div>

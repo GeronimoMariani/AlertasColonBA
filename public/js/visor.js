@@ -46,15 +46,24 @@ function updateDateTime() {
 setInterval(updateDateTime, 1000);
 updateDateTime();
 
+function escapeHtml(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function renderAlerta(data, actualizada = false) {
   container.innerHTML = `
     ${actualizada ? `<div id="badgeActualizada">⚠️ ALERTA ACTUALIZADA</div>` : ""}
-    <h1>${data.tipo.toUpperCase()}</h1>
-    <h2>DIRECCIÓN: ${data.direccion}</h2>
-    <p>Descripcion: ${data.descripcion || ""}</p>
-    <p class="info">Despachado por: ${data.despachadoPor}</p>
-    <p class="info">Contacto: ${data.contacto || "—"}</p>
-    <p class="info">Fecha: ${data.timestamp}</p>
+    <h1>${escapeHtml(String(data.tipo ?? "").toUpperCase())}</h1>
+    <h2>DIRECCIÓN: ${escapeHtml(data.direccion)}</h2>
+    <p>Descripcion: ${escapeHtml(data.descripcion)}</p>
+    <p class="info">Despachado por: ${escapeHtml(data.despachadoPor)}</p>
+    <p class="info">Contacto: ${escapeHtml(data.contacto || "—")}</p>
+    <p class="info">Fecha: ${escapeHtml(data.timestamp)}</p>
   `;
 }
 

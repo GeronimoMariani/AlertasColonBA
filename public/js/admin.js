@@ -1,4 +1,36 @@
-const ADMIN_PASSWORD = sessionStorage.getItem("adminAuth");
+const ADMIN_TOKEN_KEY = "adminToken";
+
+function authHeaders() {
+  const token = sessionStorage.getItem(ADMIN_TOKEN_KEY);
+  return { "Content-Type": "application/json", ...(token ? { "Authorization": `Bearer ${token}` } : {}) };
+}
+
+function escapeHtml(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function cerrarSesionAdmin() {
+  sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+  document.getElementById("panelAdmin").style.display = "none";
+  document.getElementById("loginAdmin").style.display = "flex";
+  document.getElementById("adminUser").value = "";
+  document.getElementById("adminPass").value = "";
+}
+
+// Si el servidor rechaza la sesión, vuelve al login. Devuelve true si hubo que salir.
+function sesionRechazada(res) {
+  if (res.status === 401 || res.status === 403) {
+    showMessage("❌ Sesión expirada o sin permisos. Volvé a iniciar sesión.", "error");
+    cerrarSesionAdmin();
+    return true;
+  }
+  return false;
+}
 
 // Login admin
 document.getElementById("loginAdminBtn").addEventListener("click", async () => {
@@ -15,7 +47,7 @@ document.getElementById("loginAdminBtn").addEventListener("click", async () => {
     const data = await res.json();
 
     if (res.ok && data.success && data.rol === "admin") {
-      sessionStorage.setItem("adminAuth", "true");
+      sessionStorage.setItem(ADMIN_TOKEN_KEY, data.token);
       document.getElementById("loginAdmin").style.display = "none";
       document.getElementById("panelAdmin").style.display = "block";
       cargarUsuarios();
@@ -29,17 +61,12 @@ document.getElementById("loginAdminBtn").addEventListener("click", async () => {
   }
 });
 
-document.getElementById("cerrarSesionAdminBtn").addEventListener("click", () => {
-  sessionStorage.removeItem("adminAuth");
-  document.getElementById("panelAdmin").style.display = "none";
-  document.getElementById("loginAdmin").style.display = "flex";
-  document.getElementById("adminUser").value = "";
-  document.getElementById("adminPass").value = "";
-});
+document.getElementById("cerrarSesionAdminBtn").addEventListener("click", cerrarSesionAdmin);
 
 // Si ya estaba autenticado
 window.addEventListener("load", () => {
-  if (sessionStorage.getItem("adminAuth") === "true") {
+  sessionStorage.removeItem("adminAuth"); // marca vieja, ya no se usa
+  if (sessionStorage.getItem(ADMIN_TOKEN_KEY)) {
     document.getElementById("loginAdmin").style.display = "none";
     document.getElementById("panelAdmin").style.display = "block";
     cargarUsuarios();
@@ -48,7 +75,8 @@ window.addEventListener("load", () => {
 
 async function cargarUsuarios() {
   try {
-    const res = await fetch("/listar-usuarios");
+    const res = await fetch("/listar-usuarios", { headers: authHeaders() });
+    if (sesionRechazada(res)) return;
     const usuarios = await res.json();
 
     const pendientes = usuarios.filter(u => u.estado === "pendiente");
@@ -70,26 +98,43 @@ function renderSeccion(containerId, usuarios, acciones) {
     return;
   }
 
-  contenedor.innerHTML = usuarios.map(u => `
+  contenedor.innerHTML = usuarios.map(u => {
+    const id = escapeHtml(u.id);
+    const rol = escapeHtml(u.rol);
+    return `
     <div class="usuario-card">
-      <span class="nombre">👤 ${u.nombre} ${u.apellido} (${u.usuario}) — <em>${u.rol}</em></span>
+      <span class="nombre">👤 ${escapeHtml(u.nombre)} ${escapeHtml(u.apellido)} (${escapeHtml(u.usuario)}) — <em>${rol}</em></span>
       <div class="acciones">
-        ${acciones.includes("aprobar") ? `<button class="btn-aprobar" onclick="gestionar('${u.id}', 'aprobado')">✅ Aprobar</button>` : ""}
-        ${acciones.includes("rechazar") ? `<button class="btn-rechazar" onclick="gestionar('${u.id}', 'rechazado')">❌ Rechazar</button>` : ""}
-        ${acciones.includes("cambiarRol") ? `<button class="btn-rol" onclick="cambiarRol('${u.id}', '${u.rol}')">${u.rol === "admin" ? "⬇️ Quitar admin" : "⬆️ Hacer admin"}</button>` : ""}
-        ${acciones.includes("eliminar") ? `<button class="btn-eliminar" onclick="eliminar('${u.id}')">🗑 Eliminar</button>` : ""}
+        ${acciones.includes("aprobar") ? `<button class="btn-aprobar" data-accion="gestionar" data-usuario="${id}" data-estado="aprobado">✅ Aprobar</button>` : ""}
+        ${acciones.includes("rechazar") ? `<button class="btn-rechazar" data-accion="gestionar" data-usuario="${id}" data-estado="rechazado">❌ Rechazar</button>` : ""}
+        ${acciones.includes("cambiarRol") ? `<button class="btn-rol" data-accion="cambiarRol" data-usuario="${id}" data-rol="${rol}">${u.rol === "admin" ? "⬇️ Quitar admin" : "⬆️ Hacer admin"}</button>` : ""}
+        ${acciones.includes("eliminar") ? `<button class="btn-eliminar" data-accion="eliminar" data-usuario="${id}">🗑 Eliminar</button>` : ""}
       </div>
-    </div>
-  `).join("");
+    </div>`;
+  }).join("");
 }
+
+// Los datos del usuario viajan en atributos data-* (nunca dentro de código JS inline),
+// así un nombre de usuario malicioso no puede ejecutar código en el panel.
+["pendientes", "aprobados", "rechazados"].forEach(containerId => {
+  document.getElementById(containerId).addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-accion]");
+    if (!btn) return;
+    const { accion, usuario, estado, rol } = btn.dataset;
+    if (accion === "gestionar") gestionar(usuario, estado);
+    else if (accion === "cambiarRol") cambiarRol(usuario, rol);
+    else if (accion === "eliminar") eliminar(usuario);
+  });
+});
 
 async function gestionar(usuario, estado) {
   try {
     const res = await fetch("/gestionar-usuario", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders(),
       body: JSON.stringify({ usuario, estado })
     });
+    if (sesionRechazada(res)) return;
     const data = await res.json();
     if (data.success) {
       showMessage("✅ Usuario actualizado correctamente.", "success");
@@ -107,9 +152,10 @@ async function cambiarRol(usuario, rolActual) {
   try {
     const res = await fetch("/cambiar-rol", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders(),
       body: JSON.stringify({ usuario, rol: nuevoRol })
     });
+    if (sesionRechazada(res)) return;
     const data = await res.json();
     if (data.success) {
       showMessage(`✅ Rol cambiado a ${nuevoRol}.`, "success");
@@ -125,7 +171,8 @@ async function cambiarRol(usuario, rolActual) {
 async function eliminar(usuario) {
   if (!confirm(`¿Seguro que querés eliminar al usuario "${usuario}"?`)) return;
   try {
-    const res = await fetch(`/eliminar-usuario/${usuario}`, { method: "DELETE" });
+    const res = await fetch(`/eliminar-usuario/${encodeURIComponent(usuario)}`, { method: "DELETE", headers: authHeaders() });
+    if (sesionRechazada(res)) return;
     const data = await res.json();
     if (data.success) {
       showMessage("✅ Usuario eliminado.", "success");
