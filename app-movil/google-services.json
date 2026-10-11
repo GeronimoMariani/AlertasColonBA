@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "665310922522",
+    "project_id": "alertascolonba",
+    "storage_bucket": "alertascolonba.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:665310922522:android:cff72a1435f29205e30ea3",
+        "android_client_info": {
+          "package_name": "com.alertascolon.ba.movil"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC0lO2kRrFb5HKJg0gw2-_oUD8ur9JMYNs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
