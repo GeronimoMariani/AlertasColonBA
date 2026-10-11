@@ -4,9 +4,10 @@ import {
   Alert, AppState, Linking, Platform,
 } from "react-native";
 import * as Notifications from "expo-notifications";
+import * as Device from "expo-device";
 import { pedir, SesionVencida } from "./api";
 import {
-  obtenerTokenPush, probarSonido, abrirAjustesAlertas, abrirAjustesBateria,
+  obtenerTokenPush, probarSonido, abrirAjustesNotificaciones, pedirSinAhorroBateria,
 } from "./notificaciones";
 import { colores } from "./tema";
 
@@ -41,7 +42,7 @@ export default function PantallaPrincipal({ sesion, alSalir }) {
   const registrarCelular = useCallback(async () => {
     const r = await obtenerTokenPush();
     if (r.error) {
-      setPush({ listo: false, error: r.error });
+      setPush({ listo: false, error: r.error, detalle: r.detalle });
       return;
     }
     try {
@@ -117,7 +118,8 @@ export default function PantallaPrincipal({ sesion, alSalir }) {
     await probarSonido(5);
     Alert.alert(
       "Prueba en 5 segundos",
-      "Bloqueá el celular o ponelo en silencio: la sirena tiene que sonar igual."
+      "Bloqueá el celular o ponelo en silencio: la sirena tiene que sonar igual.\n\n" +
+        "Suena con el volumen de ALARMA (el del despertador): si no la escuchás, subí ese volumen."
     );
   }
 
@@ -211,14 +213,14 @@ export default function PantallaPrincipal({ sesion, alSalir }) {
       {Platform.OS === "android" && (
         <>
           <Opcion
-            titulo="Permitir en «No molestar»"
-            detalle="Activá «Anular No molestar» en el canal de alertas."
-            alTocar={() => abrirAjustesAlertas().catch(() => Linking.openSettings())}
+            titulo="Quitar ahorro de batería"
+            detalle="Aparece un cartel del sistema: tocá «Permitir»."
+            alTocar={() => pedirSinAhorroBateria().catch(() => Linking.openSettings())}
           />
           <Opcion
-            titulo="Quitar ahorro de batería"
-            detalle="Buscá «Alertas Colón» y elegí «Sin restricciones» / «No optimizar»."
-            alTocar={() => abrirAjustesBateria().catch(() => Linking.openSettings())}
+            titulo="Revisar notificaciones"
+            detalle="Que «Alertas de salida» esté activada. Si tu celular muestra «Ignorar No molestar» o «Anular No molestar», activalo."
+            alTocar={() => abrirAjustesNotificaciones().catch(() => Linking.openSettings())}
           />
         </>
       )}
@@ -250,6 +252,11 @@ function EstadoPush({ push, reintentar }) {
     <Pressable onPress={reintentar} style={[estilos.estadoPush, { borderColor: colores.rojo }]}>
       <Text style={[estilos.estadoPushTexto, { color: "#f0645d" }]}>⚠ {push.error}</Text>
       <Text style={estilos.estadoPushDetalle}>Tocá para reintentar. Si sigue, revisá los permisos de notificaciones.</Text>
+      {push.detalle ? (
+        <Text style={estilos.estadoPushTecnico} selectable>
+          {push.detalle}{"\n"}{Device.manufacturer} {Device.modelName} · Android {Device.osVersion}
+        </Text>
+      ) : null}
     </Pressable>
   );
 }
@@ -331,6 +338,7 @@ const estilos = StyleSheet.create({
   },
   estadoPushTexto: { color: colores.apagado, fontWeight: "600" },
   estadoPushDetalle: { color: colores.apagado, fontSize: 13, marginTop: 4 },
+  estadoPushTecnico: { color: colores.tenue, fontSize: 12, marginTop: 8, fontFamily: "monospace" },
 
   alerta: { borderRadius: 14, overflow: "hidden", borderWidth: 1, borderColor: colores.rojo, backgroundColor: colores.panel },
   banda: {
