@@ -1,5 +1,12 @@
 const ADMIN_TOKEN_KEY = "adminToken";
 
+// Bombero: solo recibe alertas en la app del celular. Despachador: además las envía.
+const ROLES = {
+  bombero: "Bombero",
+  despachador: "Despachador",
+  admin: "Admin",
+};
+
 function authHeaders() {
   const token = sessionStorage.getItem(ADMIN_TOKEN_KEY);
   return { "Content-Type": "application/json", ...(token ? { "Authorization": `Bearer ${token}` } : {}) };
@@ -103,17 +110,20 @@ function renderSeccion(containerId, usuarios, acciones) {
     const id = escapeHtml(u.id);
     const rol = escapeHtml(u.rol);
     const iniciales = `${String(u.nombre ?? "").charAt(0)}${String(u.apellido ?? "").charAt(0)}`;
+    const opcionesRol = Object.entries(ROLES)
+      .map(([valor, texto]) => `<option value="${valor}"${u.rol === valor ? " selected" : ""}>${texto}</option>`)
+      .join("");
     return `
     <div class="usuario-card">
       <div class="avatar">${escapeHtml(iniciales)}</div>
       <div>
-        <span class="nombre">${escapeHtml(u.nombre)} ${escapeHtml(u.apellido)}${u.rol === "admin" ? ` <span class="chip chip-steel">Admin</span>` : ""}</span>
+        <span class="nombre">${escapeHtml(u.nombre)} ${escapeHtml(u.apellido)}${ROLES[u.rol] ? ` <span class="chip ${u.rol === "admin" ? "chip-steel" : ""}">${ROLES[u.rol]}</span>` : ""}</span>
         <span class="correo">${escapeHtml(u.usuario)}</span>
       </div>
       <div class="acciones">
         ${acciones.includes("aprobar") ? `<button class="btn-aprobar" data-accion="gestionar" data-usuario="${id}" data-estado="aprobado">Aprobar</button>` : ""}
         ${acciones.includes("rechazar") ? `<button class="btn-rechazar" data-accion="gestionar" data-usuario="${id}" data-estado="rechazado">Rechazar</button>` : ""}
-        ${acciones.includes("cambiarRol") ? `<button class="btn-rol" data-accion="cambiarRol" data-usuario="${id}" data-rol="${rol}">${u.rol === "admin" ? "Quitar admin" : "Hacer admin"}</button>` : ""}
+        ${acciones.includes("cambiarRol") ? `<select class="sel-rol" data-usuario="${id}" data-rol="${rol}" aria-label="Rol">${opcionesRol}</select>` : ""}
         ${acciones.includes("eliminar") ? `<button class="btn-eliminar" data-accion="eliminar" data-usuario="${id}">Eliminar</button>` : ""}
       </div>
     </div>`;
@@ -126,10 +136,14 @@ function renderSeccion(containerId, usuarios, acciones) {
   document.getElementById(containerId).addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-accion]");
     if (!btn) return;
-    const { accion, usuario, estado, rol } = btn.dataset;
+    const { accion, usuario, estado } = btn.dataset;
     if (accion === "gestionar") gestionar(usuario, estado);
-    else if (accion === "cambiarRol") cambiarRol(usuario, rol);
     else if (accion === "eliminar") eliminar(usuario);
+  });
+  document.getElementById(containerId).addEventListener("change", (e) => {
+    const sel = e.target.closest("select.sel-rol");
+    if (!sel) return;
+    cambiarRol(sel.dataset.usuario, sel.dataset.rol, sel.value);
   });
 });
 
@@ -153,8 +167,12 @@ async function gestionar(usuario, estado) {
   }
 }
 
-async function cambiarRol(usuario, rolActual) {
-  const nuevoRol = rolActual === "admin" ? "despachador" : "admin";
+async function cambiarRol(usuario, rolActual, nuevoRol) {
+  if (nuevoRol === rolActual) return;
+  if (!confirm(`¿Cambiar el rol de "${usuario}" a ${ROLES[nuevoRol]}?`)) {
+    cargarUsuarios(); // vuelve el selector al rol actual
+    return;
+  }
   try {
     const res = await fetch("/cambiar-rol", {
       method: "POST",

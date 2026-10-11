@@ -130,6 +130,16 @@ section h2 .n {
   border-color: var(--steel);
 }
 
+.sel-rol {
+  width: auto;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  background: rgba(111, 156, 196, 0.1);
+  border: 1px solid rgba(111, 156, 196, 0.4);
+  border-radius: var(--r-sm);
+  color: var(--steel);
+}
+
 .btn-eliminar {
   background: transparent;
   border-color: transparent;

@@ -138,10 +138,18 @@ main {
   overflow-wrap: anywhere;
 }
 
+/* Columna derecha: datos de despacho + asistencia */
+.alert-col {
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
 /* Columna de datos de despacho */
 .alert-side {
   margin: 0;
-  align-self: start;
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -175,6 +183,67 @@ main {
   font: 500 clamp(1.15rem, 1.5vw, 1.6rem)/1.3 var(--f-mono);
   text-transform: none;
   font-variant-numeric: tabular-nums;
+}
+
+/* --- Asistencia (respuestas desde la app del celular) --- */
+.asistencia {
+  background: #0c0b0b;
+  border: 1px solid #1b1818;
+  border-radius: var(--r-md);
+  padding: 18px 22px;
+}
+
+.asist-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font: 600 0.75rem var(--f-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.asist-n {
+  font: 800 clamp(2rem, 3vw, 3rem)/1 var(--f-display);
+  color: var(--green);
+}
+
+.asist-lista {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  max-height: 32vh;
+  overflow: hidden;
+}
+
+.asist-lista li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-top: 1px solid #1b1818;
+  font: 600 clamp(1.05rem, 1.4vw, 1.4rem)/1.2 var(--f-display);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.asist-lista li .mono {
+  font: 500 0.95rem var(--f-mono);
+  color: var(--muted);
+}
+
+.asist-lista li.vacio {
+  color: var(--faint);
+  font: 0.85rem var(--f-mono);
+  letter-spacing: 0.1em;
+}
+
+.asist-no {
+  margin-top: 10px;
+  font: 600 0.8rem var(--f-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 /* --- Sin alertas --- */

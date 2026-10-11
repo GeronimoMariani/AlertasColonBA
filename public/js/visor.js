@@ -54,6 +54,28 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
+// Respuestas "Asisto / No asisto" que llegan desde la app del celular
+let asistencia = null;
+
+function renderAsistencia() {
+  const el = document.getElementById("asistencia");
+  if (!el) return;
+  const asisten = asistencia ? asistencia.asisten : [];
+  const noAsisten = asistencia ? asistencia.noAsisten : [];
+  el.innerHTML = `
+    <div class="asist-head">
+      <span>Asisten</span>
+      <b class="asist-n">${asisten.length}</b>
+    </div>
+    <ul class="asist-lista">
+      ${asisten.length
+        ? asisten.map(r => `<li><span>${escapeHtml(r.nombre)}</span><span class="mono">${escapeHtml(r.hora)}</span></li>`).join("")
+        : `<li class="vacio">Esperando respuestas…</li>`}
+    </ul>
+    ${noAsisten.length ? `<div class="asist-no">No asisten: ${noAsisten.length}</div>` : ""}
+  `;
+}
+
 function renderAlerta(data, actualizada = false) {
   const estado = actualizada ? "actualizada" : "";
   container.innerHTML = `
@@ -67,14 +89,23 @@ function renderAlerta(data, actualizada = false) {
         <h2 class="alert-addr"><small>Dirección</small>${escapeHtml(data.direccion)}</h2>
         ${data.descripcion ? `<p class="alert-desc">${escapeHtml(data.descripcion)}</p>` : ""}
       </div>
-      <dl class="alert-side">
-        <div><dt>Despachado por</dt><dd>${escapeHtml(data.despachadoPor)}</dd></div>
-        <div><dt>Contacto</dt><dd class="mono">${escapeHtml(data.contacto || "—")}</dd></div>
-        <div><dt>Fecha y hora</dt><dd class="mono">${escapeHtml(data.timestamp)}</dd></div>
-      </dl>
+      <div class="alert-col">
+        <dl class="alert-side">
+          <div><dt>Despachado por</dt><dd>${escapeHtml(data.despachadoPor)}</dd></div>
+          <div><dt>Contacto</dt><dd class="mono">${escapeHtml(data.contacto || "—")}</dd></div>
+          <div><dt>Fecha y hora</dt><dd class="mono">${escapeHtml(data.timestamp)}</dd></div>
+        </dl>
+        <div id="asistencia" class="asistencia"></div>
+      </div>
     </div>
   `;
+  renderAsistencia();
 }
+
+socket.on("asistencia", (data) => {
+  asistencia = data;
+  renderAsistencia();
+});
 
 // --- Recibir alerta nueva ---
 socket.on("alert", (data) => {
@@ -94,6 +125,7 @@ socket.on("alertExistente", (data) => {
 
 // --- Limpiar alerta ---
 socket.on("clearAlert", () => {
+  asistencia = null;
   container.innerHTML = `
     <div id="noAlertContainer">
       <img src="logo.png" alt="Logo Bomberos" />

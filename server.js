@@ -72,6 +72,14 @@ const registroLimiter = rateLimit({
 
 const EMAIL_RE = /^[^\s@\/<>"'`]+@[^\s@\/<>"'`]+\.[^\s@\/<>"'`]+$/;
 
+// "bombero" solo recibe alertas en la app del celular; no puede enviarlas.
+const ROLES = ["admin", "despachador", "bombero"];
+
+// La app del celular recibe un token largo (para no pedir login seguido) pero
+// limitado: con scope "app" solo sirve para las rutas /app/*.
+const APP_TOKEN_SCOPE = "app";
+const APP_TOKEN_DURACION = "180d";
+
 // Evita que un error no manejado tire abajo el servidor en medio de una emergencia
 process.on("unhandledRejection", (e) => {
   console.error("❌ Promesa rechazada sin manejar:", e);
@@ -91,10 +99,36 @@ function autenticar(req, res, next) {
     return res.status(401).json({ success: false, message: "Sesión expirada. Volvé a iniciar sesión." });
   }
   try {
-    req.usuario = jwt.verify(header.slice(7), JWT_SECRET);
+    const payload = jwt.verify(header.slice(7), JWT_SECRET);
+    // Un token de la app del celular no habilita el panel web ni la administración
+    if (payload.scope === APP_TOKEN_SCOPE) throw new Error("token de app");
+    req.usuario = payload;
     next();
   } catch (e) {
     return res.status(401).json({ success: false, message: "Sesión expirada. Volvé a iniciar sesión." });
+  }
+}
+
+// Para las rutas de la app del celular: token con scope "app" y usuario todavía aprobado.
+async function autenticarApp(req, res, next) {
+  const header = req.headers.authorization;
+  let payload;
+  try {
+    if (!header || !header.startsWith("Bearer ")) throw new Error("sin token");
+    payload = jwt.verify(header.slice(7), JWT_SECRET);
+    if (payload.scope !== APP_TOKEN_SCOPE) throw new Error("token sin scope de app");
+  } catch (e) {
+    return res.status(401).json({ success: false, message: "Sesión expirada. Volvé a iniciar sesión." });
+  }
+  try {
+    const actual = await cargarUsuarioActivo(payload.usuario);
+    if (!actual) return res.status(401).json({ success: false, message: "Tu usuario ya no está habilitado." });
+    req.usuario = payload;
+    req.usuarioActivo = actual;
+    next();
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ success: false, message: "Error al verificar el usuario" });
   }
 }
 
@@ -200,6 +234,9 @@ let alertTimeout = null;
 
 app.post("/registro-usuario", registroLimiter, async (req, res) => {
   const { usuario, password, nombre, apellido } = req.body;
+  // La app del celular pide el rol "bombero" (solo recibir); la web, "despachador".
+  // Igual queda pendiente hasta que un admin la apruebe.
+  const rolPedido = req.body.rol === "bombero" ? "bombero" : "despachador";
   if (!usuario || !password || !nombre || !apellido) {
     return res.status(400).json({ success: false, message: "Faltan datos obligatorios" });
   }
@@ -223,7 +260,7 @@ app.post("/registro-usuario", registroLimiter, async (req, res) => {
     await db.collection("usuarios").doc(usuario).set({
       usuario, nombre, apellido,
       password: hash,
-      rol: "despachador",
+      rol: rolPedido,
       estado: "pendiente"
     });
 
@@ -236,6 +273,7 @@ app.post("/registro-usuario", registroLimiter, async (req, res) => {
           <h2>Nueva solicitud de acceso</h2>
           <p><strong>Nombre:</strong> ${escapeHtml(nombre)} ${escapeHtml(apellido)}</p>
           <p><strong>Mail:</strong> ${escapeHtml(usuario)}</p>
+          <p><strong>Rol pedido:</strong> ${escapeHtml(rolPedido)}</p>
           <a href="${process.env.APP_URL}/admin.html">Ir al panel</a>
         `
       });
@@ -251,18 +289,24 @@ app.post("/registro-usuario", registroLimiter, async (req, res) => {
   }
 });
 
-app.post("/login-usuario", loginLimiter, async (req, res) => {
-  const { usuario, password } = req.body;
+// Valida usuario y contraseña. Devuelve { data } si son correctos, o { status, message } si no.
+async function validarCredenciales(usuario, password) {
   if (typeof usuario !== "string" || typeof password !== "string" || !usuario || !password) {
-    return res.status(400).json({ success: false, message: "Completá usuario y contraseña" });
+    return { status: 400, message: "Completá usuario y contraseña" };
   }
+  const doc = await db.collection("usuarios").doc(usuario).get();
+  if (!doc.exists) return { status: 401, message: "Usuario incorrecto" };
+  const data = doc.data();
+  if (data.estado !== "aprobado") return { status: 403, message: "Usuario pendiente de aprobación" };
+  const match = await bcrypt.compare(password, data.password);
+  if (!match) return { status: 401, message: "Contraseña incorrecta" };
+  return { data };
+}
+
+app.post("/login-usuario", loginLimiter, async (req, res) => {
   try {
-    const doc = await db.collection("usuarios").doc(usuario).get();
-    if (!doc.exists) return res.status(401).json({ success: false, message: "Usuario incorrecto" });
-    const data = doc.data();
-    if (data.estado !== "aprobado") return res.status(403).json({ success: false, message: "Usuario pendiente de aprobación" });
-    const match = await bcrypt.compare(password, data.password);
-    if (!match) return res.status(401).json({ success: false, message: "Contraseña incorrecta" });
+    const { data, status, message } = await validarCredenciales(req.body.usuario, req.body.password);
+    if (!data) return res.status(status).json({ success: false, message });
 
     const token = jwt.sign({ usuario: data.usuario, rol: data.rol }, JWT_SECRET, { expiresIn: "12h" });
     res.json({ success: true, usuario: data.usuario, rol: data.rol, token });
@@ -302,7 +346,7 @@ app.post("/cambiar-rol", autenticar, requiereAdmin, async (req, res) => {
   if (typeof usuario !== "string" || !usuario) {
     return res.status(400).json({ success: false, message: "Usuario inválido" });
   }
-  if (!["admin", "despachador"].includes(rol)) {
+  if (!ROLES.includes(rol)) {
     return res.status(400).json({ success: false, message: "Rol inválido" });
   }
   try {
@@ -349,15 +393,13 @@ app.post("/editar-alerta", autenticar, async (req, res) => {
     lastAlert = { ...lastAlert, ...cambios };
 
     try {
-      const snapshot = await db.collection("alertas").orderBy("timestamp", "desc").limit(1).get();
-      if (!snapshot.empty) {
-        await snapshot.docs[0].ref.update(cambios);
-      }
+      await db.collection("alertas").doc(lastAlert.id).update(cambios);
     } catch (e) {
       console.error("❌ Error al actualizar alerta:", e);
     }
 
     io.emit("alertActualizada", lastAlert);
+    enviarPush(lastAlert, { actualizada: true });
     res.json({ success: true });
   } catch (e) {
     console.error("❌ Error al editar alerta:", e);
@@ -367,7 +409,7 @@ app.post("/editar-alerta", autenticar, async (req, res) => {
 
 async function guardarAlertaFirebase(alerta) {
   try {
-    await db.collection("alertas").add({
+    await db.collection("alertas").doc(alerta.id).set({
       ...alerta,
       timestamp: new Date().toISOString()
     });
@@ -408,6 +450,133 @@ async function enviarTelegram(alerta) {
   }
 }
 
+// ─── Notificaciones push a la app del celular ───────────────────────────────
+// Los nombres de canal/sonido tienen que coincidir con los que crea la app (app-movil).
+const PUSH_CANAL_ALERTAS = "alertas_v1";
+const PUSH_CANAL_ACTUALIZACIONES = "actualizaciones_v1";
+const PUSH_SONIDO = "sirena";
+// Activar solo cuando Apple apruebe el permiso de Critical Alerts para la app de iPhone
+const IOS_ALERTAS_CRITICAS = process.env.IOS_CRITICAL_ALERTS === "true";
+const PUSH_VIGENCIA_MS = 30 * 60 * 1000; // igual que la duración de la alerta activa
+
+// Errores de FCM que indican que el token ya no sirve (app desinstalada, etc.)
+const TOKENS_INVALIDOS = [
+  "messaging/registration-token-not-registered",
+  "messaging/invalid-registration-token",
+];
+
+function idDispositivo(token) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+function mensajePush(token, alerta, actualizada) {
+  const titulo = actualizada
+    ? `✏️ ALERTA ACTUALIZADA: ${alerta.tipo.toUpperCase()}`
+    : `🚨 ${alerta.tipo.toUpperCase()}`;
+  const cuerpo = alerta.descripcion ? `${alerta.direccion} — ${alerta.descripcion}` : alerta.direccion;
+
+  let sonidoIos = actualizada ? "default" : `${PUSH_SONIDO}.wav`;
+  if (!actualizada && IOS_ALERTAS_CRITICAS) {
+    sonidoIos = { critical: true, name: `${PUSH_SONIDO}.wav`, volume: 1.0 };
+  }
+
+  return {
+    token,
+    notification: { title: titulo, body: cuerpo },
+    data: { alertaId: alerta.id, evento: actualizada ? "actualizada" : "nueva" },
+    android: {
+      priority: "high",
+      ttl: PUSH_VIGENCIA_MS,
+      notification: {
+        channelId: actualizada ? PUSH_CANAL_ACTUALIZACIONES : PUSH_CANAL_ALERTAS,
+        sound: actualizada ? "default" : PUSH_SONIDO,
+        tag: alerta.id, // la actualización reemplaza a la notificación original
+        priority: "max",
+        visibility: "public",
+      },
+    },
+    apns: {
+      headers: {
+        "apns-priority": "10",
+        "apns-push-type": "alert",
+        "apns-expiration": String(Math.floor((Date.now() + PUSH_VIGENCIA_MS) / 1000)),
+      },
+      payload: {
+        aps: {
+          sound: sonidoIos,
+          "interruption-level": !actualizada && IOS_ALERTAS_CRITICAS ? "critical" : "time-sensitive",
+        },
+      },
+    },
+  };
+}
+
+// Manda la alerta a todos los celulares registrados de usuarios aprobados.
+// Nunca tira error: un problema acá no puede frenar el resto del despacho.
+async function enviarPush(alerta, { actualizada = false } = {}) {
+  try {
+    const snapshot = await db.collection("dispositivos").get();
+    let dispositivos = snapshot.docs.map(doc => ({ ref: doc.ref, ...doc.data() }));
+
+    // Se descartan los de usuarios eliminados o rechazados. Si esta consulta falla,
+    // se manda igual a todos: es preferible de más que de menos en una emergencia.
+    try {
+      const aprobados = await db.collection("usuarios").where("estado", "==", "aprobado").get();
+      const habilitados = new Set(aprobados.docs.map(doc => doc.id));
+      dispositivos = dispositivos.filter(d => habilitados.has(d.usuario));
+    } catch (e) {
+      console.error("⚠️ No se pudo filtrar usuarios aprobados, se envía a todos los dispositivos:", e);
+    }
+
+    if (dispositivos.length === 0) {
+      console.log("ℹ️ No hay celulares registrados para push");
+      return;
+    }
+
+    const resultados = await Promise.allSettled(
+      dispositivos.map(d => admin.messaging().send(mensajePush(d.token, alerta, actualizada)))
+    );
+
+    let enviados = 0;
+    resultados.forEach((r, i) => {
+      if (r.status === "fulfilled") {
+        enviados++;
+        return;
+      }
+      const code = r.reason && r.reason.code;
+      if (TOKENS_INVALIDOS.includes(code)) {
+        dispositivos[i].ref.delete().catch(() => {});
+      } else {
+        console.error(`❌ Push fallido a ${dispositivos[i].usuario}:`, code || r.reason);
+      }
+    });
+    console.log(`✅ Push enviado a ${enviados}/${dispositivos.length} celulares`);
+  } catch (e) {
+    console.error("❌ Error al enviar push:", e);
+  }
+}
+
+// ─── Asistencia (Asisto / No asisto) de la alerta activa ────────────────────
+// usuario → { nombre, respuesta: "asisto" | "no_asisto", hora }
+let respuestas = new Map();
+
+function resumenAsistencia() {
+  const lista = [...respuestas.values()];
+  return {
+    alertaId: lastAlert ? lastAlert.id : null,
+    asisten: lista.filter(r => r.respuesta === "asisto").map(({ nombre, hora }) => ({ nombre, hora })),
+    noAsisten: lista.filter(r => r.respuesta === "no_asisto").map(({ nombre, hora }) => ({ nombre, hora })),
+  };
+}
+
+function limpiarAlertaActiva() {
+  lastAlert = null;
+  respuestas = new Map();
+  if (alertTimeout) clearTimeout(alertTimeout);
+  alertTimeout = null;
+  io.emit("clearAlert");
+}
+
 // Contador de visores conectados
 let visoresConectados = 0;
 
@@ -417,7 +586,9 @@ io.use((socket, next) => {
   const token = socket.handshake.auth && socket.handshake.auth.token;
   if (token) {
     try {
-      socket.usuario = jwt.verify(token, JWT_SECRET);
+      const payload = jwt.verify(token, JWT_SECRET);
+      // El token de la app del celular no habilita a enviar alertas
+      if (payload.scope !== APP_TOKEN_SCOPE) socket.usuario = payload;
     } catch (e) {
       // token inválido o vencido: se conecta como visor, sin permisos de envío
     }
@@ -444,7 +615,10 @@ io.on("connection", async (socket) => {
     }
   });
 
-  if (lastAlert) socket.emit("alertExistente", lastAlert);
+  if (lastAlert) {
+    socket.emit("alertExistente", lastAlert);
+    socket.emit("asistencia", resumenAsistencia());
+  }
   socket.emit("visoresCount", visoresConectados);
 
   try {
@@ -477,17 +651,17 @@ io.on("connection", async (socket) => {
         timeZone: "America/Argentina/Buenos_Aires",
       });
 
-      lastAlert = { ...limpio, enviadoPor: socket.usuario.usuario, timestamp };
+      lastAlert = { id: crypto.randomUUID(), ...limpio, enviadoPor: socket.usuario.usuario, timestamp };
+      respuestas = new Map();
       await guardarAlertaFirebase(lastAlert);
       enviarTelegram(lastAlert);
+      enviarPush(lastAlert);
       io.emit("alert", lastAlert);
+      io.emit("asistencia", resumenAsistencia());
       responder({ ok: true });
 
       if (alertTimeout) clearTimeout(alertTimeout);
-      alertTimeout = setTimeout(() => {
-        lastAlert = null;
-        io.emit("clearAlert");
-      }, 30 * 60 * 1000);
+      alertTimeout = setTimeout(limpiarAlertaActiva, 30 * 60 * 1000);
     } catch (e) {
       console.error("❌ Error al enviar alerta:", e);
       return responder({ ok: false, code: "ERROR", message: "Error del servidor al enviar la alerta" });
@@ -504,9 +678,109 @@ io.on("connection", async (socket) => {
 
   socket.on("clearAlertManual", () => {
     if (!socket.usuario || socket.usuario.rol !== "admin") return;
-    lastAlert = null;
-    io.emit("clearAlert");
+    limpiarAlertaActiva();
   });
+});
+
+// ─── Rutas de la app del celular ────────────────────────────────────────────
+app.post("/app/login", loginLimiter, async (req, res) => {
+  try {
+    const { data, status, message } = await validarCredenciales(req.body.usuario, req.body.password);
+    if (!data) return res.status(status).json({ success: false, message });
+
+    const token = jwt.sign(
+      { usuario: data.usuario, rol: data.rol, scope: APP_TOKEN_SCOPE },
+      JWT_SECRET,
+      { expiresIn: APP_TOKEN_DURACION }
+    );
+    res.json({ success: true, usuario: data.usuario, nombre: data.nombre, apellido: data.apellido, rol: data.rol, token });
+  } catch (e) {
+    res.status(500).json({ success: false, message: "Error del servidor" });
+  }
+});
+
+// Registra (o actualiza) el token de push del celular del usuario
+app.post("/app/dispositivo", autenticarApp, async (req, res) => {
+  const { token, plataforma } = req.body;
+  if (typeof token !== "string" || !token || token.length > 4096) {
+    return res.status(400).json({ success: false, message: "Token de dispositivo inválido" });
+  }
+  if (!["android", "ios"].includes(plataforma)) {
+    return res.status(400).json({ success: false, message: "Plataforma inválida" });
+  }
+  try {
+    await db.collection("dispositivos").doc(idDispositivo(token)).set({
+      token,
+      plataforma,
+      usuario: req.usuario.usuario,
+      actualizado: new Date().toISOString(),
+    });
+    res.json({ success: true });
+  } catch (e) {
+    console.error("❌ Error al registrar dispositivo:", e);
+    res.status(500).json({ success: false, message: "Error al registrar el celular" });
+  }
+});
+
+// Al cerrar sesión en la app: el celular deja de recibir alertas
+app.post("/app/dispositivo/baja", autenticarApp, async (req, res) => {
+  const { token } = req.body;
+  if (typeof token !== "string" || !token) {
+    return res.status(400).json({ success: false, message: "Token de dispositivo inválido" });
+  }
+  try {
+    const ref = db.collection("dispositivos").doc(idDispositivo(token));
+    const doc = await ref.get();
+    if (doc.exists && doc.data().usuario === req.usuario.usuario) await ref.delete();
+    res.json({ success: true });
+  } catch (e) {
+    console.error("❌ Error al dar de baja dispositivo:", e);
+    res.status(500).json({ success: false, message: "Error al dar de baja el celular" });
+  }
+});
+
+app.get("/app/estado", autenticarApp, (req, res) => {
+  const mia = respuestas.get(req.usuario.usuario);
+  res.json({
+    success: true,
+    alerta: lastAlert,
+    asistencia: lastAlert ? resumenAsistencia() : null,
+    miRespuesta: mia ? mia.respuesta : null,
+  });
+});
+
+app.post("/app/responder", autenticarApp, async (req, res) => {
+  const { alertaId, respuesta } = req.body;
+  if (!["asisto", "no_asisto"].includes(respuesta)) {
+    return res.status(400).json({ success: false, message: "Respuesta inválida" });
+  }
+  if (!lastAlert || alertaId !== lastAlert.id) {
+    return res.status(409).json({ success: false, message: "Esa alerta ya no está activa" });
+  }
+
+  const u = req.usuarioActivo;
+  const registro = {
+    nombre: `${u.nombre || ""} ${u.apellido || ""}`.trim() || u.usuario,
+    respuesta,
+    hora: new Date().toLocaleTimeString("es-AR", {
+      hour: "2-digit", minute: "2-digit", hour12: false,
+      timeZone: "America/Argentina/Buenos_Aires",
+    }),
+  };
+  respuestas.set(req.usuario.usuario, registro);
+  io.emit("asistencia", resumenAsistencia());
+
+  try {
+    await db.collection("alertas").doc(alertaId).collection("respuestas").doc(req.usuario.usuario).set({
+      ...registro,
+      usuario: req.usuario.usuario,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (e) {
+    console.error("❌ Error al guardar respuesta:", e);
+  }
+
+  res.json({ success: true, miRespuesta: respuesta, asistencia: resumenAsistencia() });
 });
 
 app.post("/solicitar-reset", resetLimiter, async (req, res) => {
