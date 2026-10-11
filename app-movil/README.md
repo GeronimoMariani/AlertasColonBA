@@ -39,9 +39,12 @@ visor del cuartel.
 Al entrar por primera vez, en la sección **Preparar el celular**:
 
 1. **Probar la sirena** → bloquear el celular y ponerlo en silencio: tiene que sonar.
-2. **Permitir en «No molestar»** → activar *Anular No molestar*.
-3. **Quitar ahorro de batería** → poner la app en *Sin restricciones*.
+   Suena con el volumen de **alarma** (el del despertador): si no se escucha, subir ese volumen.
+2. **Quitar ahorro de batería** → en el cartel del sistema, tocar *Permitir*.
    En Xiaomi, Samsung y Motorola esto es clave: si no, la alerta puede llegar tarde.
+3. **Revisar notificaciones** → que *Alertas de salida* esté activada. Si la marca muestra
+   *Ignorar / Anular No molestar*, activarlo. Igual, con el volumen de alarma la sirena ya
+   pasa el "No molestar" cuando este permite alarmas, que es lo normal.
 
 ## Actualizar la app
 

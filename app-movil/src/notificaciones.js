@@ -73,7 +73,8 @@ export async function obtenerTokenPush() {
     const { data } = await Notifications.getDevicePushTokenAsync();
     return { token: data, plataforma: Platform.OS };
   } catch (e) {
-    return { error: "No se pudo obtener el token de notificaciones" };
+    // Se muestra el detalle técnico para poder diagnosticar el celular
+    return { error: "No se pudo obtener el token de notificaciones", detalle: String(e && e.message || e) };
   }
 }
 
@@ -94,17 +95,21 @@ export async function probarSonido(segundos = 5) {
   });
 }
 
-// Ajustes del canal de alertas: ahí se activa "Anular No molestar"
-export async function abrirAjustesAlertas() {
-  await IntentLauncher.startActivityAsync(IntentLauncher.ActivityAction.CHANNEL_NOTIFICATION_SETTINGS, {
-    extra: {
-      "android.provider.extra.APP_PACKAGE": PAQUETE_ANDROID,
-      "android.provider.extra.CHANNEL_ID": CANAL_ALERTAS,
-    },
+// Pantalla de notificaciones de esta app (existe igual en todas las marcas)
+export async function abrirAjustesNotificaciones() {
+  await IntentLauncher.startActivityAsync(IntentLauncher.ActivityAction.APP_NOTIFICATION_SETTINGS, {
+    extra: { "android.provider.extra.APP_PACKAGE": PAQUETE_ANDROID },
   });
 }
 
-// Lista de apps con ahorro de batería: hay que poner esta en "Sin restricciones"
-export async function abrirAjustesBateria() {
-  await IntentLauncher.startActivityAsync(IntentLauncher.ActivityAction.IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+// Muestra el cartel del sistema "¿Permitir que la app se ejecute siempre en segundo plano?".
+// Si la marca no lo soporta, abre la lista de optimización de batería.
+export async function pedirSinAhorroBateria() {
+  try {
+    await IntentLauncher.startActivityAsync(IntentLauncher.ActivityAction.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, {
+      data: `package:${PAQUETE_ANDROID}`,
+    });
+  } catch (e) {
+    await IntentLauncher.startActivityAsync(IntentLauncher.ActivityAction.IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+  }
 }
