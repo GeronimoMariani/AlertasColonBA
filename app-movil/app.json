@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "Alertas Colón",
+    "slug": "alertas-colon-ba",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/logo.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0d0c0c",
+    "ios": {
+      "bundleIdentifier": "com.alertascolon.ba.movil",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "com.alertascolon.ba.movil",
+      "googleServicesFile": "./google-services.json",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo.png",
+        "backgroundColor": "#0d0c0c"
+      }
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "color": "#d8261e",
+          "sounds": ["./assets/sounds/sirena.mp3"],
+          "defaultChannel": "alertas_v1"
+        }
+      ]
+    ],
+    "extra": {
+      "apiUrl": "https://alertasbomberoscolonba.com.ar"
+    }
+  }
+}
