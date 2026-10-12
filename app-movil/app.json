@@ -4,7 +4,7 @@
     "slug": "alertas-colon-ba",
     "version": "1.0.5",
     "orientation": "portrait",
-    "icon": "./assets/logo.png",
+    "icon": "./assets/icono.png",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0d0c0c",
     "ios": {
@@ -19,7 +19,7 @@
         "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
       ],
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logo.png",
+        "foregroundImage": "./assets/icono-android.png",
         "backgroundColor": "#0d0c0c"
       }
     },
