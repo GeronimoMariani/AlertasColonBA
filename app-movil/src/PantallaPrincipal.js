@@ -41,19 +41,15 @@ export default function PantallaPrincipal({ sesion, alSalir }) {
     }
   }, [sesion.token, manejarError]);
 
-  const registrarCelular = useCallback(async () => {
-    const r = await obtenerTokenPush();
-    if (r.error) {
-      setPush({ listo: false, error: r.error, detalle: r.detalle });
-      return;
-    }
+  // Avisa al servidor qué token tiene este celular
+  const enviarToken = useCallback(async (token, plataforma) => {
     try {
       await pedir("/app/dispositivo", {
         metodo: "POST",
         token: sesion.token,
-        cuerpo: { token: r.token, plataforma: r.plataforma },
+        cuerpo: { token, plataforma },
       });
-      tokenPush.current = r.token;
+      tokenPush.current = token;
       setPush({ listo: true, error: null });
     } catch (e) {
       if (e instanceof SesionVencida) return manejarError(e);
@@ -61,13 +57,33 @@ export default function PantallaPrincipal({ sesion, alSalir }) {
     }
   }, [sesion.token, manejarError]);
 
+  // Expo no permite dos pedidos de token al mismo tiempo: el segundo falla.
+  // Por eso se evita pedirlo de nuevo mientras hay uno en curso.
+  const pidiendoToken = useRef(false);
+  const registrarCelular = useCallback(async () => {
+    if (pidiendoToken.current) return;
+    pidiendoToken.current = true;
+    try {
+      const r = await obtenerTokenPush();
+      if (r.error) {
+        setPush({ listo: false, error: r.error, detalle: r.detalle });
+        return;
+      }
+      await enviarToken(r.token, r.plataforma);
+    } finally {
+      pidiendoToken.current = false;
+    }
+  }, [enviarToken]);
+
   // Al abrir: registrar el celular y traer el estado
   useEffect(() => {
     registrarCelular();
     actualizar();
 
-    // Si Android/iOS cambia el token, se vuelve a registrar
-    const subToken = Notifications.addPushTokenListener(() => registrarCelular());
+    // Si Android/iOS entrega un token nuevo, se registra ese mismo (sin volver a pedirlo)
+    const subToken = Notifications.addPushTokenListener(({ data }) => {
+      if (data && data !== tokenPush.current) enviarToken(data, Platform.OS);
+    });
     // Llega una alerta con la app abierta, o se toca una notificación
     const subRecibida = Notifications.addNotificationReceivedListener(() => actualizar());
     const subRespuesta = Notifications.addNotificationResponseReceivedListener(() => actualizar());
@@ -82,7 +98,7 @@ export default function PantallaPrincipal({ sesion, alSalir }) {
       subRespuesta.remove();
       subApp.remove();
     };
-  }, [registrarCelular, actualizar]);
+  }, [registrarCelular, enviarToken, actualizar]);
 
   // Conexión en vivo con el servidor (la misma que usa el visor): la alerta y la
   // lista de asistencia se actualizan al instante, aunque no llegue la notificación.
