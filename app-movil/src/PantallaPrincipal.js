@@ -10,6 +10,7 @@ import { pedir, SesionVencida, MODO_PRUEBA, servidorActual } from "./api";
 import {
   obtenerTokenPush, probarSonido, abrirAjustesNotificaciones, pedirSinAhorroBateria,
 } from "./notificaciones";
+import { esBotonDeRespuesta, procesarBoton } from "./botonesNotificacion";
 import { colores } from "./tema";
 
 const REFRESCO_MS = 15000; // con una alerta activa y la app abierta
@@ -86,7 +87,15 @@ export default function PantallaPrincipal({ sesion, alSalir }) {
     });
     // Llega una alerta con la app abierta, o se toca una notificación
     const subRecibida = Notifications.addNotificationReceivedListener(() => actualizar());
-    const subRespuesta = Notifications.addNotificationResponseReceivedListener(() => actualizar());
+    const subRespuesta = Notifications.addNotificationResponseReceivedListener(async (respuesta) => {
+      // Botón Asisto / No asisto con la app abierta. Con la app en segundo plano
+      // lo resuelve la tarea de botonesNotificacion.js, así no se manda dos veces.
+      if (esBotonDeRespuesta(respuesta)) {
+        if (AppState.currentState !== "active") return;
+        await procesarBoton(respuesta);
+      }
+      actualizar();
+    });
     // Vuelve a primer plano
     const subApp = AppState.addEventListener("change", (s) => {
       if (s === "active") actualizar();
@@ -175,6 +184,7 @@ export default function PantallaPrincipal({ sesion, alSalir }) {
     Alert.alert(
       "Prueba en 5 segundos",
       "Bloqueá el celular o ponelo en silencio: la sirena tiene que sonar igual.\n\n" +
+        "En la notificación vas a ver los botones ASISTO / NO ASISTO: probalos sin desbloquear.\n\n" +
         "Suena con el volumen de ALARMA (el del despertador): si no la escuchás, subí ese volumen."
     );
   }

@@ -9,6 +9,8 @@ import Constants from "expo-constants";
 // se crea uno nuevo con otro nombre (alertas_v2) y se actualiza el servidor.
 export const CANAL_ALERTAS = "alertas_v1";
 export const CANAL_ACTUALIZACIONES = "actualizaciones_v1";
+// Categoría con los botones de la notificación (server.js → PUSH_CATEGORIA)
+export const CATEGORIA_ALERTA = "alerta";
 
 const PAQUETE_ANDROID = Constants.expoConfig.android?.package;
 
@@ -24,6 +26,13 @@ Notifications.setNotificationHandler({
 
 // Se llama al abrir la app, antes de pedir permisos (Android 13 lo exige así)
 export async function crearCanales() {
+  // Botones de la notificación de alerta. No abren la app: la respuesta se manda
+  // en segundo plano (ver botonesNotificacion.js).
+  await Notifications.setNotificationCategoryAsync(CATEGORIA_ALERTA, [
+    { identifier: "asisto", buttonTitle: "✅ ASISTO", options: { opensAppToForeground: false } },
+    { identifier: "no_asisto", buttonTitle: "❌ NO ASISTO", options: { opensAppToForeground: false, isDestructive: true } },
+  ]);
+
   if (Platform.OS !== "android") return;
 
   // Canal de alertas: usa el volumen de ALARMA, así suena aunque el
@@ -83,8 +92,9 @@ export async function probarSonido(segundos = 5) {
   await Notifications.scheduleNotificationAsync({
     content: {
       title: "🚨 PRUEBA DE ALERTA",
-      body: "Si escuchaste la sirena, el celular está listo.",
+      body: "Si escuchaste la sirena, el celular está listo. Probá también los botones.",
       sound: Platform.OS === "ios" ? "sirena.wav" : undefined,
+      categoryIdentifier: CATEGORIA_ALERTA,
       data: { prueba: true },
     },
     trigger: {

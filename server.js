@@ -474,6 +474,10 @@ const PUSH_SONIDO = "sirena";
 // Activar solo cuando Apple apruebe el permiso de Critical Alerts para la app de iPhone
 const IOS_ALERTAS_CRITICAS = process.env.IOS_CRITICAL_ALERTS === "true";
 const PUSH_VIGENCIA_MS = 30 * 60 * 1000; // igual que la duración de la alerta activa
+// Botones Asisto / No asisto en la notificación (categoría "alerta" que registra la app).
+// Por ahora solo en modo prueba; en producción se activa con PUSH_BOTONES=true.
+const PUSH_BOTONES = MODO_PRUEBA || process.env.PUSH_BOTONES === "true";
+const PUSH_CATEGORIA = "alerta";
 
 // Errores de FCM que indican que el token ya no sirve (app desinstalada, etc.)
 const TOKENS_INVALIDOS = [
@@ -496,6 +500,42 @@ function mensajePush(token, alerta, actualizada) {
     sonidoIos = { critical: true, name: `${PUSH_SONIDO}.wav`, volume: 1.0 };
   }
 
+  const apns = {
+    headers: {
+      "apns-priority": "10",
+      "apns-push-type": "alert",
+      "apns-expiration": String(Math.floor((Date.now() + PUSH_VIGENCIA_MS) / 1000)),
+    },
+    payload: {
+      aps: {
+        sound: sonidoIos,
+        "interruption-level": !actualizada && IOS_ALERTAS_CRITICAS ? "critical" : "time-sensitive",
+      },
+    },
+  };
+
+  if (PUSH_BOTONES) {
+    // En Android va como mensaje de datos: la app (expo-notifications) lo muestra con el
+    // canal de alarma y los botones de la categoría. Las claves son las que lee Expo.
+    // En iPhone el aviso lo arma el sistema con aps.alert y la categoría.
+    apns.payload.aps.alert = { title: titulo, body: cuerpo };
+    apns.payload.aps.category = PUSH_CATEGORIA;
+    return {
+      token,
+      data: {
+        title: titulo,
+        message: cuerpo,
+        body: JSON.stringify({ alertaId: alerta.id, evento: actualizada ? "actualizada" : "nueva" }),
+        channelId: actualizada ? PUSH_CANAL_ACTUALIZACIONES : PUSH_CANAL_ALERTAS,
+        categoryId: PUSH_CATEGORIA,
+        tag: alerta.id, // la actualización reemplaza a la notificación original
+        alertaId: alerta.id,
+      },
+      android: { priority: "high", ttl: PUSH_VIGENCIA_MS },
+      apns,
+    };
+  }
+
   return {
     token,
     notification: { title: titulo, body: cuerpo },
@@ -511,19 +551,7 @@ function mensajePush(token, alerta, actualizada) {
         visibility: "public",
       },
     },
-    apns: {
-      headers: {
-        "apns-priority": "10",
-        "apns-push-type": "alert",
-        "apns-expiration": String(Math.floor((Date.now() + PUSH_VIGENCIA_MS) / 1000)),
-      },
-      payload: {
-        aps: {
-          sound: sonidoIos,
-          "interruption-level": !actualizada && IOS_ALERTAS_CRITICAS ? "critical" : "time-sensitive",
-        },
-      },
-    },
+    apns,
   };
 }
 

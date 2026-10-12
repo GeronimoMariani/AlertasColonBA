@@ -1,5 +1,7 @@
 import { registerRootComponent } from 'expo';
 
+// Primero: registra la tarea de los botones Asisto / No asisto de la notificación
+import './src/botonesNotificacion';
 import App from './App';
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
