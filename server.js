@@ -637,14 +637,6 @@ io.on("connection", async (socket) => {
   }
   socket.emit("visoresCount", visoresConectados);
 
-  try {
-    const snapshot = await coleccion("alertas").orderBy("timestamp", "desc").limit(20).get();
-    const historial = snapshot.docs.map(doc => doc.data());
-    socket.emit("history", historial);
-  } catch (e) {
-    console.error("❌ Error al cargar historial:", e);
-  }
-
   // El cliente recibe la respuesta por "callback" (ack) para saber si la alerta salió de verdad
   socket.on("sendAlert", async (data, callback) => {
     const responder = typeof callback === "function" ? callback : () => {};
@@ -696,6 +688,16 @@ io.on("connection", async (socket) => {
     if (!socket.usuario || socket.usuario.rol !== "admin") return;
     limpiarAlertaActiva();
   });
+
+  // El historial se carga al final: si se esperara antes de registrar los eventos,
+  // una alerta enviada apenas conecta el socket se perdería sin aviso.
+  try {
+    const snapshot = await coleccion("alertas").orderBy("timestamp", "desc").limit(20).get();
+    const historial = snapshot.docs.map(doc => doc.data());
+    socket.emit("history", historial);
+  } catch (e) {
+    console.error("❌ Error al cargar historial:", e);
+  }
 });
 
 // ─── Rutas de la app del celular ────────────────────────────────────────────

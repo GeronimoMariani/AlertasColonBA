@@ -50,8 +50,12 @@ export async function borrarSesion() {
 
 export class SesionVencida extends Error {}
 
+const LIMITE_MS = 10000; // si el servidor no contesta en este tiempo, se avisa en vez de quedar colgado
+
 // Llama al servidor. Tira SesionVencida si el token ya no sirve, o Error con el mensaje del servidor.
 export async function pedir(ruta, { metodo = "GET", cuerpo, token } = {}) {
+  const corte = new AbortController();
+  const temporizador = setTimeout(() => corte.abort(), LIMITE_MS);
   let res;
   try {
     res = await fetch(`${apiUrl}${ruta}`, {
@@ -61,9 +65,12 @@ export async function pedir(ruta, { metodo = "GET", cuerpo, token } = {}) {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+      signal: corte.signal,
     });
   } catch (e) {
-    throw new Error("Sin conexión con el servidor");
+    throw new Error(corte.signal.aborted ? "El servidor no respondió a tiempo" : "Sin conexión con el servidor");
+  } finally {
+    clearTimeout(temporizador);
   }
 
   let data = {};

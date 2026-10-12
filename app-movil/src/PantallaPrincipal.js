@@ -5,6 +5,7 @@ import {
 } from "react-native";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
+import { io } from "socket.io-client";
 import { pedir, SesionVencida, MODO_PRUEBA, servidorActual } from "./api";
 import {
   obtenerTokenPush, probarSonido, abrirAjustesNotificaciones, pedirSinAhorroBateria,
@@ -18,6 +19,7 @@ export default function PantallaPrincipal({ sesion, alSalir }) {
   const [cargando, setCargando] = useState(false);
   const [enviando, setEnviando] = useState(null);
   const [push, setPush] = useState({ listo: false, error: null });
+  const [enVivo, setEnVivo] = useState(false);
   const tokenPush = useRef(null);
 
   const manejarError = useCallback((e) => {
@@ -82,7 +84,37 @@ export default function PantallaPrincipal({ sesion, alSalir }) {
     };
   }, [registrarCelular, actualizar]);
 
-  // Mientras hay alerta activa, se refresca para ver quién responde
+  // Conexión en vivo con el servidor (la misma que usa el visor): la alerta y la
+  // lista de asistencia se actualizan al instante, aunque no llegue la notificación.
+  useEffect(() => {
+    const socket = io(servidorActual(), {
+      transports: ["websocket"],
+      reconnection: true,
+      reconnectionDelay: 2000,
+      reconnectionDelayMax: 10000,
+    });
+
+    // Al (re)conectar se pide el estado completo, por si algo pasó mientras estaba desconectado
+    socket.on("connect", () => {
+      setEnVivo(true);
+      actualizar();
+    });
+    socket.on("disconnect", () => setEnVivo(false));
+    socket.on("alert", actualizar);
+    socket.on("alertActualizada", actualizar);
+    socket.on("clearAlert", () => {
+      setEstado((prev) => ({ ...prev, alerta: null, asistencia: null, miRespuesta: null }));
+    });
+    socket.on("asistencia", (asistencia) => {
+      setEstado((prev) => (prev && prev.alerta && prev.alerta.id === asistencia.alertaId
+        ? { ...prev, asistencia }
+        : prev));
+    });
+
+    return () => socket.disconnect();
+  }, [actualizar]);
+
+  // Respaldo: mientras hay alerta activa, se refresca igual cada tanto
   const hayAlerta = Boolean(estado && estado.alerta);
   useEffect(() => {
     if (!hayAlerta) return;
@@ -97,7 +129,10 @@ export default function PantallaPrincipal({ sesion, alSalir }) {
   }
 
   async function responder(respuesta) {
-    if (!estado || !estado.alerta) return;
+    if (!estado || !estado.alerta || enviando) return;
+    const anterior = estado.miRespuesta;
+    // El botón se marca al instante; si el servidor no lo confirma, vuelve atrás y avisa
+    setEstado((prev) => ({ ...prev, miRespuesta: respuesta }));
     setEnviando(respuesta);
     try {
       const data = await pedir("/app/responder", {
@@ -107,8 +142,13 @@ export default function PantallaPrincipal({ sesion, alSalir }) {
       });
       setEstado((prev) => ({ ...prev, miRespuesta: data.miRespuesta, asistencia: data.asistencia }));
     } catch (e) {
-      manejarError(e);
-      actualizar();
+      setEstado((prev) => ({ ...prev, miRespuesta: anterior }));
+      if (e instanceof SesionVencida) {
+        manejarError(e);
+      } else {
+        Alert.alert("No se registró tu respuesta", `${e.message}. Probá de nuevo.`);
+        actualizar();
+      }
     } finally {
       setEnviando(null);
     }
@@ -143,7 +183,12 @@ export default function PantallaPrincipal({ sesion, alSalir }) {
       <View style={estilos.encabezado}>
         <View style={{ flex: 1 }}>
           <Text style={estilos.marca}>Alertas Colón</Text>
-          <Text style={estilos.usuario}>{sesion.nombre} {sesion.apellido}</Text>
+          <Text style={estilos.usuario}>
+            {sesion.nombre} {sesion.apellido} ·{" "}
+            <Text style={{ color: enVivo ? colores.verde : colores.ambar }}>
+              {enVivo ? "● En vivo" : "○ Conectando…"}
+            </Text>
+          </Text>
         </View>
         <Pressable onPress={cerrarSesion} hitSlop={10}>
           <Text style={estilos.salir}>Salir</Text>
