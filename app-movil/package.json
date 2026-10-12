@@ -4,6 +4,7 @@
   "main": "index.js",
   "dependencies": {
     "expo": "~57.0.27",
+    "expo-build-properties": "~57.0.22",
     "expo-constants": "~57.0.21",
     "expo-device": "~57.0.2",
     "expo-intent-launcher": "~57.0.1",

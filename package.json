@@ -8,6 +8,7 @@
   "scripts": {
     "start": "electron .",
     "dev": "nodemon server.js",
+    "pruebas": "cross-env MODO_PRUEBA=true nodemon server.js",
     "server": "node server.js",
     "clean": "rimraf dist",
     "build": "npm run clean && electron-builder",

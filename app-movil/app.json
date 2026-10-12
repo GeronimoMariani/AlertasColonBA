@@ -15,7 +15,9 @@
       "package": "com.alertascolon.ba.movil",
       "versionCode": 2,
       "googleServicesFile": "./google-services.json",
-      "permissions": ["android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"],
+      "permissions": [
+        "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo.png",
         "backgroundColor": "#0d0c0c"

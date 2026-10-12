@@ -10,6 +10,13 @@
         "buildType": "apk"
       }
     },
+    "pruebas": {
+      "extends": "preview",
+      "env": {
+        "APP_VARIANTE": "pruebas",
+        "API_URL": "http://192.168.0.217:3000"
+      }
+    },
     "production": {
       "android": {
         "buildType": "app-bundle"

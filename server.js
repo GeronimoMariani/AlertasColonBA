@@ -34,6 +34,18 @@ admin.initializeApp({
 });
 const db = admin.firestore();
 
+// Modo prueba (npm run pruebas): no manda Telegram y guarda alertas y celulares en
+// colecciones aparte ("prueba_*"), así las pruebas no llegan a nadie ni ensucian el historial.
+// Los usuarios son los mismos, para poder ingresar con la cuenta de siempre.
+const MODO_PRUEBA = process.env.MODO_PRUEBA === "true";
+if (MODO_PRUEBA) {
+  console.log("🧪 MODO PRUEBA: sin Telegram, alertas y celulares en colecciones prueba_*");
+}
+
+function coleccion(nombre) {
+  return db.collection(MODO_PRUEBA ? `prueba_${nombre}` : nombre);
+}
+
 const app = express();
 app.set("trust proxy", 1);
 const server = http.createServer(app);
@@ -393,7 +405,7 @@ app.post("/editar-alerta", autenticar, async (req, res) => {
     lastAlert = { ...lastAlert, ...cambios };
 
     try {
-      await db.collection("alertas").doc(lastAlert.id).update(cambios);
+      await coleccion("alertas").doc(lastAlert.id).update(cambios);
     } catch (e) {
       console.error("❌ Error al actualizar alerta:", e);
     }
@@ -409,7 +421,7 @@ app.post("/editar-alerta", autenticar, async (req, res) => {
 
 async function guardarAlertaFirebase(alerta) {
   try {
-    await db.collection("alertas").doc(alerta.id).set({
+    await coleccion("alertas").doc(alerta.id).set({
       ...alerta,
       timestamp: new Date().toISOString()
     });
@@ -425,6 +437,10 @@ function escapeMarkdown(str) {
 }
 
 async function enviarTelegram(alerta) {
+  if (MODO_PRUEBA) {
+    console.log("🧪 Telegram omitido (modo prueba)");
+    return;
+  }
   if (!process.env.TELEGRAM_TOKEN || !process.env.TELEGRAM_CHAT_ID) {
     console.log("ℹ️ Telegram desactivado (faltan TELEGRAM_TOKEN / TELEGRAM_CHAT_ID)");
     return;
@@ -515,7 +531,7 @@ function mensajePush(token, alerta, actualizada) {
 // Nunca tira error: un problema acá no puede frenar el resto del despacho.
 async function enviarPush(alerta, { actualizada = false } = {}) {
   try {
-    const snapshot = await db.collection("dispositivos").get();
+    const snapshot = await coleccion("dispositivos").get();
     let dispositivos = snapshot.docs.map(doc => ({ ref: doc.ref, ...doc.data() }));
 
     // Se descartan los de usuarios eliminados o rechazados. Si esta consulta falla,
@@ -622,7 +638,7 @@ io.on("connection", async (socket) => {
   socket.emit("visoresCount", visoresConectados);
 
   try {
-    const snapshot = await db.collection("alertas").orderBy("timestamp", "desc").limit(20).get();
+    const snapshot = await coleccion("alertas").orderBy("timestamp", "desc").limit(20).get();
     const historial = snapshot.docs.map(doc => doc.data());
     socket.emit("history", historial);
   } catch (e) {
@@ -668,7 +684,7 @@ io.on("connection", async (socket) => {
     }
 
     try {
-      const snapshot = await db.collection("alertas").orderBy("timestamp", "desc").limit(20).get();
+      const snapshot = await coleccion("alertas").orderBy("timestamp", "desc").limit(20).get();
       const historial = snapshot.docs.map(doc => doc.data());
       io.emit("history", historial);
     } catch (e) {
@@ -709,7 +725,7 @@ app.post("/app/dispositivo", autenticarApp, async (req, res) => {
     return res.status(400).json({ success: false, message: "Plataforma inválida" });
   }
   try {
-    await db.collection("dispositivos").doc(idDispositivo(token)).set({
+    await coleccion("dispositivos").doc(idDispositivo(token)).set({
       token,
       plataforma,
       usuario: req.usuario.usuario,
@@ -729,7 +745,7 @@ app.post("/app/dispositivo/baja", autenticarApp, async (req, res) => {
     return res.status(400).json({ success: false, message: "Token de dispositivo inválido" });
   }
   try {
-    const ref = db.collection("dispositivos").doc(idDispositivo(token));
+    const ref = coleccion("dispositivos").doc(idDispositivo(token));
     const doc = await ref.get();
     if (doc.exists && doc.data().usuario === req.usuario.usuario) await ref.delete();
     res.json({ success: true });
@@ -771,7 +787,7 @@ app.post("/app/responder", autenticarApp, async (req, res) => {
   io.emit("asistencia", resumenAsistencia());
 
   try {
-    await db.collection("alertas").doc(alertaId).collection("respuestas").doc(req.usuario.usuario).set({
+    await coleccion("alertas").doc(alertaId).collection("respuestas").doc(req.usuario.usuario).set({
       ...registro,
       usuario: req.usuario.usuario,
       timestamp: new Date().toISOString(),

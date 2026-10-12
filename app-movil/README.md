@@ -46,6 +46,24 @@ Al entrar por primera vez, en la sección **Preparar el celular**:
    *Ignorar / Anular No molestar*, activarlo. Igual, con el volumen de alarma la sirena ya
    pasa el "No molestar" cuando este permite alarmas, que es lo normal.
 
+## Probar con el servidor local (sin mandar alertas reales)
+
+1. En la PC, desde la carpeta principal del proyecto: `npm run pruebas`.
+   En ese modo el servidor **no manda Telegram** y guarda las alertas y los celulares en
+   colecciones aparte de Firebase (`prueba_alertas`, `prueba_dispositivos`): no aparecen
+   en el historial ni llegan a los celulares de la app normal. Los usuarios son los mismos.
+2. Panel de envío en la PC: http://localhost:3000/sender.html — visor: http://localhost:3000/visor.html
+3. Versión de prueba de la app (dice **PRUEBA** en el nombre y arriba en amarillo):
+   ```
+   npx eas-cli@latest build -p android --profile pruebas
+   ```
+   Viene apuntada a `http://192.168.0.217:3000`. Si la IP de la PC cambia, se corrige en
+   el campo **Servidor** de la pantalla de ingreso, sin volver a compilar.
+4. El celular tiene que estar en la **misma red** (Wi-Fi del mismo router) que la PC.
+
+La versión de prueba reemplaza a la normal en el celular (es la misma app). Para volver a
+la normal, instalar el APK del perfil `preview`.
+
 ## Actualizar la app
 
 Cambios en el código → volver a correr el `build` del paso 3 y reinstalar el APK.

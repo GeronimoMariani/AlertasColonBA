@@ -1,9 +1,34 @@
 import Constants from "expo-constants";
 import * as SecureStore from "expo-secure-store";
 
-export const API_URL = Constants.expoConfig.extra.apiUrl;
+// Versión de prueba (perfil "pruebas"): habla con el servidor local y deja cambiar la dirección
+export const MODO_PRUEBA = Boolean(Constants.expoConfig.extra.modoPrueba);
+
+let apiUrl = Constants.expoConfig.extra.apiUrl;
 
 const CLAVE_SESION = "sesion";
+const CLAVE_SERVIDOR = "servidor";
+
+export function servidorActual() {
+  return apiUrl;
+}
+
+// Solo en modo prueba: recupera la dirección del servidor que se eligió la última vez
+export async function cargarServidor() {
+  if (!MODO_PRUEBA) return;
+  try {
+    const guardado = await SecureStore.getItemAsync(CLAVE_SERVIDOR);
+    if (guardado) apiUrl = guardado;
+  } catch (e) {
+    // se usa la dirección de fábrica
+  }
+}
+
+export async function cambiarServidor(url) {
+  if (!MODO_PRUEBA) return;
+  apiUrl = url.trim().replace(/\/+$/, "");
+  await SecureStore.setItemAsync(CLAVE_SERVIDOR, apiUrl);
+}
 
 // La sesión (token + datos del usuario) se guarda cifrada en el celular
 export async function leerSesion() {
@@ -29,7 +54,7 @@ export class SesionVencida extends Error {}
 export async function pedir(ruta, { metodo = "GET", cuerpo, token } = {}) {
   let res;
   try {
-    res = await fetch(`${API_URL}${ruta}`, {
+    res = await fetch(`${apiUrl}${ruta}`, {
       method: metodo,
       headers: {
         "Content-Type": "application/json",

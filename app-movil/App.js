@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { leerSesion, guardarSesion, borrarSesion, pedir } from "./src/api";
+import { leerSesion, guardarSesion, borrarSesion, pedir, cargarServidor } from "./src/api";
 import { crearCanales } from "./src/notificaciones";
 import PantallaAcceso from "./src/PantallaAcceso";
 import PantallaPrincipal from "./src/PantallaPrincipal";
@@ -14,7 +14,7 @@ export default function App() {
     // Los canales se crean apenas abre la app: así una alerta que llega con la
     // app cerrada ya suena con la sirena y el volumen de alarma.
     crearCanales().catch(() => {});
-    leerSesion().then(setSesion);
+    cargarServidor().then(leerSesion).then(setSesion);
   }, []);
 
   async function ingresar(nueva) {

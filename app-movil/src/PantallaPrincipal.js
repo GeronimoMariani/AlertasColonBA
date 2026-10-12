@@ -5,7 +5,7 @@ import {
 } from "react-native";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
-import { pedir, SesionVencida } from "./api";
+import { pedir, SesionVencida, MODO_PRUEBA, servidorActual } from "./api";
 import {
   obtenerTokenPush, probarSonido, abrirAjustesNotificaciones, pedirSinAhorroBateria,
 } from "./notificaciones";
@@ -149,6 +149,12 @@ export default function PantallaPrincipal({ sesion, alSalir }) {
           <Text style={estilos.salir}>Salir</Text>
         </Pressable>
       </View>
+
+      {MODO_PRUEBA && (
+        <View style={estilos.prueba}>
+          <Text style={estilos.pruebaTexto}>🧪 VERSIÓN DE PRUEBA · {servidorActual()}</Text>
+        </View>
+      )}
 
       <EstadoPush push={push} reintentar={registrarCelular} />
 
@@ -331,6 +337,9 @@ const estilos = StyleSheet.create({
   marca: { color: colores.texto, fontSize: 22, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.5 },
   usuario: { color: colores.apagado, fontSize: 14, marginTop: 2 },
   salir: { color: colores.apagado, fontSize: 15 },
+
+  prueba: { backgroundColor: colores.ambar, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10, marginBottom: 12 },
+  pruebaTexto: { color: "#1a1200", fontWeight: "800", fontSize: 12, letterSpacing: 0.5 },
 
   estadoPush: {
     borderWidth: 1, borderColor: colores.borde, borderRadius: 10,

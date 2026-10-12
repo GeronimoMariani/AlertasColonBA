@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, Pressable, Image, StyleSheet,
   KeyboardAvoidingView, ScrollView, Platform, Alert, ActivityIndicator,
 } from "react-native";
-import { pedir } from "./api";
+import { pedir, MODO_PRUEBA, servidorActual, cambiarServidor } from "./api";
 import { colores } from "./tema";
 
 function Campo({ etiqueta, ...props }) {
@@ -23,6 +23,7 @@ export default function PantallaAcceso({ alIngresar }) {
   const [apellido, setApellido] = useState("");
   const [confirmar, setConfirmar] = useState("");
   const [cargando, setCargando] = useState(false);
+  const [servidor, setServidor] = useState(servidorActual());
 
   const usuario = mail.trim().toLowerCase();
 
@@ -30,6 +31,7 @@ export default function PantallaAcceso({ alIngresar }) {
     if (!usuario || !password) return Alert.alert("Faltan datos", "Completá mail y contraseña.");
     setCargando(true);
     try {
+      if (MODO_PRUEBA) await cambiarServidor(servidor);
       const data = await pedir("/app/login", { metodo: "POST", cuerpo: { usuario, password } });
       await alIngresar({
         token: data.token,
@@ -53,6 +55,7 @@ export default function PantallaAcceso({ alIngresar }) {
     if (password !== confirmar) return Alert.alert("Revisá la contraseña", "Las contraseñas no coinciden.");
     setCargando(true);
     try {
+      if (MODO_PRUEBA) await cambiarServidor(servidor);
       await pedir("/registro-usuario", {
         metodo: "POST",
         cuerpo: { usuario, password, nombre: nombre.trim(), apellido: apellido.trim(), rol: "bombero" },
@@ -73,6 +76,7 @@ export default function PantallaAcceso({ alIngresar }) {
   async function olvideContrasena() {
     if (!usuario) return Alert.alert("Ingresá tu mail", "Escribí tu mail arriba y volvé a tocar este botón.");
     try {
+      if (MODO_PRUEBA) await cambiarServidor(servidor);
       await pedir("/solicitar-reset", { metodo: "POST", cuerpo: { usuario } });
       Alert.alert("Revisá tu mail", "Te enviamos un link para cambiar la contraseña.");
     } catch (e) {
@@ -88,6 +92,21 @@ export default function PantallaAcceso({ alIngresar }) {
         <Image source={require("../assets/logo.png")} style={estilos.logo} />
         <Text style={estilos.sobretitulo}>Bomberos Voluntarios de Colón</Text>
         <Text style={estilos.titulo}>{esLogin ? "Ingresar" : "Solicitar acceso"}</Text>
+
+        {MODO_PRUEBA && (
+          <View style={estilos.prueba}>
+            <Text style={estilos.pruebaTitulo}>🧪 Versión de prueba</Text>
+            <Campo
+              etiqueta="Servidor"
+              value={servidor}
+              onChangeText={setServidor}
+              placeholder="http://192.168.0.217:3000"
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+            />
+          </View>
+        )}
 
         {!esLogin && (
           <>
@@ -160,6 +179,11 @@ const estilos = StyleSheet.create({
     textTransform: "uppercase", marginTop: 6, marginBottom: 24,
   },
   campo: { marginBottom: 14 },
+  prueba: {
+    borderWidth: 1, borderColor: colores.ambar, borderRadius: 10,
+    padding: 12, paddingBottom: 0, marginBottom: 18,
+  },
+  pruebaTitulo: { color: colores.ambar, fontWeight: "700", marginBottom: 10 },
   etiqueta: {
     color: colores.apagado, fontSize: 12, fontWeight: "600",
     letterSpacing: 1, textTransform: "uppercase", marginBottom: 6,
