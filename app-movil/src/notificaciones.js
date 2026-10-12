@@ -78,14 +78,26 @@ export async function obtenerTokenPush() {
     return { error: "Las notificaciones están desactivadas para esta app" };
   }
 
-  try {
-    const { data } = await Notifications.getDevicePushTokenAsync();
-    return { token: data, plataforma: Platform.OS };
-  } catch (e) {
-    // Se muestra el detalle técnico para poder diagnosticar el celular
-    return { error: "No se pudo obtener el token de notificaciones", detalle: String(e && e.message || e) };
+  // Google Play a veces no contesta recién abierta la app (SERVICE_NOT_AVAILABLE,
+  // muy común en Xiaomi): es pasajero, así que se reintenta antes de dar error.
+  let ultimoError;
+  for (const espera of ESPERAS_TOKEN_MS) {
+    if (espera) await new Promise((r) => setTimeout(r, espera));
+    try {
+      const { data } = await Notifications.getDevicePushTokenAsync();
+      return { token: data, plataforma: Platform.OS };
+    } catch (e) {
+      ultimoError = e;
+    }
   }
+  // Se muestra el detalle técnico para poder diagnosticar el celular
+  return {
+    error: "No se pudo obtener el token de notificaciones",
+    detalle: String((ultimoError && ultimoError.message) || ultimoError),
+  };
 }
+
+const ESPERAS_TOKEN_MS = [0, 3000, 8000, 20000];
 
 // Notificación local por el mismo canal que las alertas reales, para probar el sonido
 export async function probarSonido(segundos = 5) {

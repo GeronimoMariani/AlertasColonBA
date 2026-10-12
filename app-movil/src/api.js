@@ -46,6 +46,23 @@ export async function guardarSesion(sesion) {
 
 export async function borrarSesion() {
   await SecureStore.deleteItemAsync(CLAVE_SESION);
+  await SecureStore.deleteItemAsync(CLAVE_TOKEN_PUSH).catch(() => {});
+}
+
+// Último token de notificaciones que se registró bien en el servidor.
+// Si Google Play no contesta al abrir la app, se vuelve a usar este (sigue siendo válido).
+const CLAVE_TOKEN_PUSH = "tokenPush";
+
+export async function leerTokenPush() {
+  try {
+    return await SecureStore.getItemAsync(CLAVE_TOKEN_PUSH);
+  } catch (e) {
+    return null;
+  }
+}
+
+export async function guardarTokenPush(token) {
+  await SecureStore.setItemAsync(CLAVE_TOKEN_PUSH, token).catch(() => {});
 }
 
 export class SesionVencida extends Error {}

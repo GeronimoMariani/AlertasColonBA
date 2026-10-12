@@ -7,7 +7,7 @@ import { Lucide } from "@react-native-vector-icons/lucide/static";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import { io } from "socket.io-client";
-import { pedir, SesionVencida, MODO_PRUEBA, servidorActual } from "./api";
+import { pedir, SesionVencida, MODO_PRUEBA, servidorActual, leerTokenPush, guardarTokenPush } from "./api";
 import {
   obtenerTokenPush, probarSonido, abrirAjustesNotificaciones, pedirSinAhorroBateria,
 } from "./notificaciones";
@@ -53,6 +53,7 @@ export default function PantallaPrincipal({ sesion, alSalir }) {
         cuerpo: { token, plataforma },
       });
       tokenPush.current = token;
+      guardarTokenPush(token);
       setPush({ listo: true, error: null });
     } catch (e) {
       if (e instanceof SesionVencida) return manejarError(e);
@@ -69,6 +70,13 @@ export default function PantallaPrincipal({ sesion, alSalir }) {
     try {
       const r = await obtenerTokenPush();
       if (r.error) {
+        // Si mientras tanto llegó el token por el aviso de token nuevo, no hay error que mostrar
+        if (tokenPush.current) return;
+        const guardado = await leerTokenPush();
+        if (guardado) {
+          await enviarToken(guardado, Platform.OS);
+          return;
+        }
         setPush({ listo: false, error: r.error, detalle: r.detalle });
         return;
       }
