@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  View, Text, Pressable, ScrollView, RefreshControl, StyleSheet,
-  Alert, AppState, Linking, Platform,
+  View, Text, Image, Pressable, ScrollView, RefreshControl, StyleSheet,
+  Alert, AppState, Linking, Platform, AccessibilityInfo,
 } from "react-native";
+import { Lucide } from "@react-native-vector-icons/lucide/static";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import { io } from "socket.io-client";
@@ -11,7 +12,8 @@ import {
   obtenerTokenPush, probarSonido, abrirAjustesNotificaciones, pedirSinAhorroBateria,
 } from "./notificaciones";
 import { esBotonDeRespuesta, procesarBoton } from "./botonesNotificacion";
-import { colores } from "./tema";
+import { colores, fuentes } from "./tema";
+import { Marca, Chip } from "./componentes";
 
 const REFRESCO_MS = 15000; // con una alerta activa y la app abierta
 
@@ -199,6 +201,9 @@ export default function PantallaPrincipal({ sesion, alSalir }) {
   const alerta = estado && estado.alerta;
   const asistencia = estado && estado.asistencia;
   const mia = estado && estado.miRespuesta;
+  const telefono = alerta && /\d{6,}/.test(alerta.contacto || "")
+    ? alerta.contacto.replace(/[^\d+]/g, "")
+    : null;
 
   return (
     <ScrollView
@@ -207,18 +212,23 @@ export default function PantallaPrincipal({ sesion, alSalir }) {
       refreshControl={<RefreshControl refreshing={cargando} onRefresh={refrescar} tintColor={colores.texto} />}
     >
       <View style={estilos.encabezado}>
-        <View style={{ flex: 1 }}>
-          <Text style={estilos.marca}>Alertas Colón</Text>
-          <Text style={estilos.usuario}>
-            {sesion.nombre} {sesion.apellido} ·{" "}
-            <Text style={{ color: enVivo ? colores.verde : colores.ambar }}>
-              {enVivo ? "● En vivo" : "○ Conectando…"}
-            </Text>
-          </Text>
-        </View>
-        <Pressable onPress={cerrarSesion} hitSlop={10}>
-          <Text style={estilos.salir}>Salir</Text>
+        <Marca titulo="Alertas Colón" subtitulo={`${sesion.nombre} ${sesion.apellido}`} />
+        <Pressable
+          onPress={cerrarSesion}
+          hitSlop={8}
+          accessibilityLabel="Cerrar sesión"
+          style={({ pressed }) => [estilos.botonIcono, pressed && { opacity: 0.6 }]}
+        >
+          <Lucide name="log-out" size={18} color={colores.apagado} />
         </Pressable>
+      </View>
+
+      <View style={estilos.chips}>
+        <Chip texto={enVivo ? "En vivo" : "Conectando…"} tono={enVivo ? "ok" : "aviso"} />
+        <Chip
+          texto={push.listo ? "Recibe alertas" : push.error ? "No recibe alertas" : "Registrando…"}
+          tono={push.listo ? "ok" : push.error ? "error" : "neutro"}
+        />
       </View>
 
       {MODO_PRUEBA && (
@@ -227,47 +237,50 @@ export default function PantallaPrincipal({ sesion, alSalir }) {
         </View>
       )}
 
-      <EstadoPush push={push} reintentar={registrarCelular} />
+      <ErrorPush push={push} reintentar={registrarCelular} />
 
       {alerta ? (
         <View style={estilos.alerta}>
-          <View style={estilos.banda}>
-            <Text style={estilos.bandaTexto}>● Alerta activa</Text>
-            <Text style={estilos.bandaTexto}>{alerta.timestamp}</Text>
-          </View>
+          <BandaAlerta hora={alerta.timestamp} />
           <View style={estilos.alertaCuerpo}>
             <Text style={estilos.tipo}>{alerta.tipo}</Text>
 
-            <Text style={estilos.etiqueta}>Dirección</Text>
-            <Pressable onPress={() => abrirMapa(alerta.direccion)}>
-              <Text style={estilos.direccion}>{alerta.direccion}</Text>
-              <Text style={estilos.mapa}>Ver en el mapa →</Text>
-            </Pressable>
+            <Text style={[estilos.etiqueta, { color: colores.rojo, marginTop: 14 }]}>Dirección</Text>
+            <Text style={estilos.direccion}>{alerta.direccion}</Text>
 
             {alerta.descripcion ? <Text style={estilos.descripcion}>{alerta.descripcion}</Text> : null}
 
+            <View style={estilos.acciones}>
+              <BotonAccion icono="map-pin" texto="Mapa" alTocar={() => abrirMapa(alerta.direccion)} />
+              {telefono ? (
+                <BotonAccion icono="phone" texto="Llamar" alTocar={() => Linking.openURL(`tel:${telefono}`)} />
+              ) : null}
+            </View>
+
             <View style={estilos.datos}>
               <Dato etiqueta="Despachado por" valor={alerta.despachadoPor} />
-              <Dato
-                etiqueta="Contacto"
-                valor={alerta.contacto || "—"}
-                alTocar={/\d{6,}/.test(alerta.contacto || "") ? () => Linking.openURL(`tel:${alerta.contacto.replace(/[^\d+]/g, "")}`) : null}
-              />
+              <View style={estilos.datosSeparador} />
+              <Dato etiqueta="Contacto" valor={alerta.contacto || "—"} mono />
             </View>
           </View>
 
           <View style={estilos.botones}>
             <BotonRespuesta
-              texto="ASISTO"
+              texto="Asisto"
+              icono="check"
               color={colores.verde}
+              colorTextoElegido="#06130d"
               elegido={mia === "asisto"}
               apagado={mia === "no_asisto"}
               cargando={enviando === "asisto"}
               alTocar={() => responder("asisto")}
             />
             <BotonRespuesta
-              texto="NO ASISTO"
+              texto="No asisto"
+              icono="x"
               color={colores.rojo}
+              colorTexto={colores.rojoClaro}
+              colorTextoElegido="#fff"
               elegido={mia === "no_asisto"}
               apagado={mia === "asisto"}
               cargando={enviando === "no_asisto"}
@@ -280,27 +293,43 @@ export default function PantallaPrincipal({ sesion, alSalir }) {
         </View>
       ) : (
         <View style={estilos.sinAlerta}>
-          <Text style={estilos.sinAlertaTitulo}>Sin alertas activas</Text>
+          <Image source={require("../assets/logo.png")} style={estilos.sinAlertaLogo} />
+          <Text style={estilos.sinAlertaTitulo}>Sin alertas</Text>
           <Text style={estilos.sinAlertaTexto}>En espera. Cuando haya una salida, el celular va a sonar.</Text>
         </View>
       )}
 
       <Text style={estilos.seccion}>Preparar el celular</Text>
-      <Opcion titulo="Probar la sirena" detalle="Suena en 5 segundos, igual que una alerta real." alTocar={probar} />
-      {Platform.OS === "android" && (
-        <>
-          <Opcion
-            titulo="Quitar ahorro de batería"
-            detalle="Aparece un cartel del sistema: tocá «Permitir»."
-            alTocar={() => pedirSinAhorroBateria().catch(() => Linking.openSettings())}
-          />
-          <Opcion
-            titulo="Revisar notificaciones"
-            detalle="Que «Alertas de salida» esté activada. Si tu celular muestra «Ignorar No molestar» o «Anular No molestar», activalo."
-            alTocar={() => abrirAjustesNotificaciones().catch(() => Linking.openSettings())}
-          />
-        </>
-      )}
+      <View style={estilos.lista}>
+        <Opcion
+          icono="volume-2"
+          tono={colores.rojoClaro}
+          fondoIcono="rgba(216,38,30,0.12)"
+          titulo="Probar la sirena"
+          detalle="Suena en 5 segundos, igual que una alerta real."
+          alTocar={probar}
+        />
+        {Platform.OS === "android" && (
+          <>
+            <Opcion
+              icono="battery-low"
+              tono={colores.ambar}
+              fondoIcono="rgba(242,169,0,0.1)"
+              titulo="Quitar ahorro de batería"
+              detalle="Aparece un cartel del sistema: tocá «Permitir»."
+              alTocar={() => pedirSinAhorroBateria().catch(() => Linking.openSettings())}
+            />
+            <Opcion
+              icono="bell"
+              tono={colores.acero}
+              fondoIcono="rgba(111,156,196,0.12)"
+              titulo="Revisar notificaciones"
+              detalle="Que «Alertas de salida» esté activada. Si tu celular muestra «Ignorar No molestar» o «Anular No molestar», activalo."
+              alTocar={() => abrirAjustesNotificaciones().catch(() => Linking.openSettings())}
+            />
+          </>
+        )}
+      </View>
     </ScrollView>
   );
 }
@@ -310,27 +339,42 @@ function abrirMapa(direccion) {
   Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${consulta}`);
 }
 
-function EstadoPush({ push, reintentar }) {
-  if (push.listo) {
-    return (
-      <View style={[estilos.estadoPush, { borderColor: "rgba(63,179,127,0.4)" }]}>
-        <Text style={[estilos.estadoPushTexto, { color: colores.verde }]}>● Este celular recibe alertas</Text>
-      </View>
-    );
-  }
-  if (!push.error) {
-    return (
-      <View style={estilos.estadoPush}>
-        <Text style={estilos.estadoPushTexto}>Registrando el celular…</Text>
-      </View>
-    );
-  }
+// Franja roja que titila, como en el visor del cuartel (quieta si el celular pide menos movimiento)
+function BandaAlerta({ hora }) {
+  const [encendida, setEncendida] = useState(true);
+  useEffect(() => {
+    let intervalo = null;
+    let activo = true;
+    AccessibilityInfo.isReduceMotionEnabled().then((reducir) => {
+      if (!activo || reducir) return;
+      intervalo = setInterval(() => setEncendida((v) => !v), 550);
+    }).catch(() => {});
+    return () => {
+      activo = false;
+      if (intervalo) clearInterval(intervalo);
+    };
+  }, []);
+
   return (
-    <Pressable onPress={reintentar} style={[estilos.estadoPush, { borderColor: colores.rojo }]}>
-      <Text style={[estilos.estadoPushTexto, { color: "#f0645d" }]}>⚠ {push.error}</Text>
-      <Text style={estilos.estadoPushDetalle}>Tocá para reintentar. Si sigue, revisá los permisos de notificaciones.</Text>
+    <View style={[estilos.banda, { backgroundColor: encendida ? colores.rojo : colores.rojoProfundo }]}>
+      <Text style={estilos.bandaTexto}>● Alerta activa</Text>
+      <Text style={estilos.bandaHora} numberOfLines={1}>{hora}</Text>
+    </View>
+  );
+}
+
+// El estado corto va en la etiqueta de arriba; si hay un error se muestra el detalle para reintentar
+function ErrorPush({ push, reintentar }) {
+  if (push.listo || !push.error) return null;
+  return (
+    <Pressable onPress={reintentar} style={estilos.errorPush}>
+      <View style={estilos.errorPushFila}>
+        <Lucide name="triangle-alert" size={16} color={colores.rojoClaro} />
+        <Text style={estilos.errorPushTexto}>{push.error}</Text>
+      </View>
+      <Text style={estilos.errorPushDetalle}>Tocá para reintentar. Si sigue, revisá los permisos de notificaciones.</Text>
       {push.detalle ? (
-        <Text style={estilos.estadoPushTecnico} selectable>
+        <Text style={estilos.errorPushTecnico} selectable>
           {push.detalle}{"\n"}{Device.manufacturer} {Device.modelName} · Android {Device.osVersion}
         </Text>
       ) : null}
@@ -338,19 +382,26 @@ function EstadoPush({ push, reintentar }) {
   );
 }
 
-function Dato({ etiqueta, valor, alTocar }) {
-  const contenido = (
-    <>
-      <Text style={estilos.etiqueta}>{etiqueta}</Text>
-      <Text style={[estilos.datoValor, alTocar && { color: colores.acero }]}>{valor}</Text>
-    </>
+function BotonAccion({ icono, texto, alTocar }) {
+  return (
+    <Pressable onPress={alTocar} style={({ pressed }) => [estilos.botonAccion, pressed && { opacity: 0.7 }]}>
+      <Lucide name={icono} size={16} color={colores.acero} />
+      <Text style={estilos.botonAccionTexto}>{texto}</Text>
+    </Pressable>
   );
-  return alTocar
-    ? <Pressable style={estilos.dato} onPress={alTocar}>{contenido}</Pressable>
-    : <View style={estilos.dato}>{contenido}</View>;
 }
 
-function BotonRespuesta({ texto, color, elegido, apagado, cargando, alTocar }) {
+function Dato({ etiqueta, valor, mono }) {
+  return (
+    <View style={estilos.dato}>
+      <Text style={estilos.etiqueta}>{etiqueta}</Text>
+      <Text style={[estilos.datoValor, mono && estilos.datoValorMono]}>{valor}</Text>
+    </View>
+  );
+}
+
+function BotonRespuesta({ texto, icono, color, colorTexto, colorTextoElegido, elegido, apagado, cargando, alTocar }) {
+  const colorActual = elegido ? colorTextoElegido : colorTexto || color;
   return (
     <Pressable
       onPress={alTocar}
@@ -358,15 +409,29 @@ function BotonRespuesta({ texto, color, elegido, apagado, cargando, alTocar }) {
       style={({ pressed }) => [
         estilos.botonRespuesta,
         { borderColor: color, backgroundColor: elegido ? color : "transparent" },
-        apagado && { opacity: 0.45 },
+        apagado && { opacity: 0.4 },
         pressed && { opacity: 0.7 },
       ]}
     >
-      <Text style={[estilos.botonRespuestaTexto, { color: elegido ? "#fff" : color }]}>
-        {cargando ? "…" : elegido ? `✓ ${texto}` : texto}
-      </Text>
+      {cargando
+        ? <Text style={[estilos.botonRespuestaTexto, { color: colorActual }]}>…</Text>
+        : (
+          <>
+            <Lucide name={icono} size={28} color={colorActual} />
+            <Text style={[estilos.botonRespuestaTexto, { color: colorActual }]}>{texto}</Text>
+          </>
+        )}
     </Pressable>
   );
+}
+
+function iniciales(nombre) {
+  return String(nombre || "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0].toUpperCase())
+    .join("");
 }
 
 function Asistencia({ asistencia }) {
@@ -380,6 +445,7 @@ function Asistencia({ asistencia }) {
         ? <Text style={estilos.vacio}>Todavía nadie confirmó.</Text>
         : asistencia.asisten.map((r, i) => (
           <View key={i} style={estilos.asistenciaFila}>
+            <View style={estilos.avatar}><Text style={estilos.avatarTexto}>{iniciales(r.nombre)}</Text></View>
             <Text style={estilos.asistenciaNombre}>{r.nombre}</Text>
             <Text style={estilos.asistenciaHora}>{r.hora}</Text>
           </View>
@@ -391,87 +457,135 @@ function Asistencia({ asistencia }) {
   );
 }
 
-function Opcion({ titulo, detalle, alTocar }) {
+function Opcion({ icono, tono, fondoIcono, titulo, detalle, alTocar }) {
   return (
     <Pressable onPress={alTocar} style={({ pressed }) => [estilos.opcion, pressed && { opacity: 0.7 }]}>
-      <Text style={estilos.opcionTitulo}>{titulo}</Text>
-      <Text style={estilos.opcionDetalle}>{detalle}</Text>
+      <View style={[estilos.opcionIcono, { backgroundColor: fondoIcono }]}>
+        <Lucide name={icono} size={18} color={tono} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={estilos.opcionTitulo}>{titulo}</Text>
+        <Text style={estilos.opcionDetalle}>{detalle}</Text>
+      </View>
+      <Lucide name="chevron-right" size={18} color={colores.tenue} />
     </Pressable>
   );
 }
 
 const estilos = StyleSheet.create({
   fondo: { flex: 1, backgroundColor: colores.fondo },
-  contenido: { padding: 16, paddingTop: 56, paddingBottom: 40 },
+  contenido: { padding: 16, paddingTop: 52, paddingBottom: 40 },
 
-  encabezado: { flexDirection: "row", alignItems: "center", marginBottom: 14 },
-  marca: { color: colores.texto, fontSize: 22, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.5 },
-  usuario: { color: colores.apagado, fontSize: 14, marginTop: 2 },
-  salir: { color: colores.apagado, fontSize: 15 },
+  encabezado: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
+  botonIcono: {
+    width: 38, height: 38, borderRadius: 10, borderWidth: 1, borderColor: colores.bordeFuerte,
+    backgroundColor: colores.panel, alignItems: "center", justifyContent: "center",
+  },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 14 },
 
   prueba: { backgroundColor: colores.ambar, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10, marginBottom: 12 },
-  pruebaTexto: { color: "#1a1200", fontWeight: "800", fontSize: 12, letterSpacing: 0.5 },
+  pruebaTexto: { color: "#1a1200", fontFamily: fuentes.monoFuerte, fontSize: 11, letterSpacing: 0.5 },
 
-  estadoPush: {
-    borderWidth: 1, borderColor: colores.borde, borderRadius: 10,
-    paddingVertical: 10, paddingHorizontal: 14, marginBottom: 16, backgroundColor: colores.panel,
+  errorPush: {
+    borderWidth: 1, borderColor: colores.rojo, borderRadius: 12,
+    paddingVertical: 12, paddingHorizontal: 14, marginBottom: 14, backgroundColor: colores.panel,
   },
-  estadoPushTexto: { color: colores.apagado, fontWeight: "600" },
-  estadoPushDetalle: { color: colores.apagado, fontSize: 13, marginTop: 4 },
-  estadoPushTecnico: { color: colores.tenue, fontSize: 12, marginTop: 8, fontFamily: "monospace" },
+  errorPushFila: { flexDirection: "row", alignItems: "center", gap: 8 },
+  errorPushTexto: { color: colores.rojoClaro, fontFamily: fuentes.textoMedio, flex: 1 },
+  errorPushDetalle: { color: colores.apagado, fontFamily: fuentes.texto, fontSize: 13, marginTop: 4 },
+  errorPushTecnico: { color: colores.tenue, fontSize: 12, marginTop: 8, fontFamily: fuentes.mono },
 
-  alerta: { borderRadius: 14, overflow: "hidden", borderWidth: 1, borderColor: colores.rojo, backgroundColor: colores.panel },
+  alerta: { borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: colores.rojo, backgroundColor: colores.panel },
   banda: {
-    flexDirection: "row", justifyContent: "space-between", backgroundColor: colores.rojo,
-    paddingVertical: 10, paddingHorizontal: 14,
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12,
+    paddingVertical: 9, paddingHorizontal: 14,
   },
-  bandaTexto: { color: "#fff", fontWeight: "700", letterSpacing: 1.5, textTransform: "uppercase", fontSize: 12 },
+  bandaTexto: { color: "#fff", fontFamily: fuentes.titulo, fontSize: 14, letterSpacing: 3, textTransform: "uppercase" },
+  bandaHora: { color: "#fff", fontFamily: fuentes.monoFuerte, fontSize: 12, flexShrink: 1 },
   alertaCuerpo: { padding: 16 },
-  tipo: { color: "#fff", fontSize: 38, fontWeight: "900", textTransform: "uppercase", marginBottom: 14 },
-  etiqueta: {
-    color: colores.tenue, fontSize: 11, fontWeight: "700", letterSpacing: 1.5, textTransform: "uppercase",
+  tipo: {
+    color: "#fff", fontFamily: fuentes.tituloFuerte, fontSize: 48, lineHeight: 48,
+    textTransform: "uppercase",
+    textShadowColor: "rgba(216,38,30,0.5)", textShadowRadius: 18, textShadowOffset: { width: 0, height: 0 },
   },
-  direccion: { color: colores.texto, fontSize: 24, fontWeight: "700", textTransform: "uppercase", marginTop: 4 },
-  mapa: { color: colores.acero, marginTop: 6, fontWeight: "600" },
-  descripcion: { color: "#d7cfcb", fontSize: 17, lineHeight: 24, marginTop: 14 },
-  datos: { flexDirection: "row", gap: 10, marginTop: 16 },
-  dato: { flex: 1, backgroundColor: colores.elevado, borderRadius: 10, padding: 12 },
-  datoValor: { color: colores.texto, fontSize: 16, fontWeight: "700", marginTop: 4 },
+  etiqueta: {
+    color: colores.tenue, fontFamily: fuentes.monoFuerte, fontSize: 10, letterSpacing: 1.6, textTransform: "uppercase",
+  },
+  direccion: {
+    color: colores.texto, fontFamily: fuentes.titulo, fontSize: 27, lineHeight: 30,
+    textTransform: "uppercase", marginTop: 4,
+  },
+  descripcion: { color: "#d7cfcb", fontFamily: fuentes.texto, fontSize: 16, lineHeight: 23, marginTop: 10 },
+  acciones: { flexDirection: "row", gap: 8, marginTop: 14 },
+  botonAccion: {
+    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7,
+    paddingVertical: 11, borderRadius: 10, borderWidth: 1,
+    borderColor: "rgba(111,156,196,0.4)", backgroundColor: "rgba(111,156,196,0.1)",
+  },
+  botonAccionTexto: { color: colores.acero, fontFamily: fuentes.textoMedio, fontSize: 15 },
+  datos: {
+    flexDirection: "row", marginTop: 12, borderRadius: 10, overflow: "hidden",
+    borderWidth: 1, borderColor: colores.borde, backgroundColor: colores.elevado,
+  },
+  datosSeparador: { width: 1, backgroundColor: colores.borde },
+  dato: { flex: 1, padding: 12 },
+  datoValor: {
+    color: colores.texto, fontFamily: fuentes.titulo, fontSize: 18, textTransform: "uppercase", marginTop: 5,
+  },
+  datoValorMono: { fontFamily: fuentes.mono, fontSize: 14, textTransform: "none", marginTop: 7 },
 
   botones: { flexDirection: "row", gap: 10, paddingHorizontal: 16 },
   botonRespuesta: {
-    flex: 1, borderWidth: 2, borderRadius: 12, paddingVertical: 22, alignItems: "center", justifyContent: "center",
+    flex: 1, borderWidth: 2, borderRadius: 14, paddingVertical: 16, gap: 6,
+    alignItems: "center", justifyContent: "center",
   },
-  botonRespuestaTexto: { fontSize: 20, fontWeight: "900", letterSpacing: 1 },
-  aviso: { color: colores.apagado, textAlign: "center", fontSize: 13, marginTop: 10, paddingHorizontal: 16 },
+  botonRespuestaTexto: { fontFamily: fuentes.tituloFuerte, fontSize: 22, letterSpacing: 2, textTransform: "uppercase" },
+  aviso: { color: colores.apagado, fontFamily: fuentes.texto, textAlign: "center", fontSize: 13, marginTop: 10, paddingHorizontal: 16 },
 
-  asistencia: { margin: 16, backgroundColor: colores.elevado, borderRadius: 10, padding: 14 },
-  asistenciaEncabezado: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 },
-  asistenciaNumero: { color: colores.verde, fontSize: 30, fontWeight: "900" },
+  asistencia: { margin: 16, backgroundColor: colores.elevado, borderRadius: 12, padding: 14 },
+  asistenciaEncabezado: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 8 },
+  asistenciaNumero: { color: colores.verde, fontFamily: fuentes.tituloFuerte, fontSize: 34, lineHeight: 36 },
   asistenciaFila: {
-    flexDirection: "row", justifyContent: "space-between", paddingVertical: 7,
+    flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8,
     borderTopWidth: 1, borderTopColor: colores.borde,
   },
-  asistenciaNombre: { color: colores.texto, fontSize: 16, fontWeight: "600", flex: 1 },
-  asistenciaHora: { color: colores.apagado, fontVariant: ["tabular-nums"] },
-  vacio: { color: colores.tenue, paddingVertical: 6 },
-  noAsisten: { color: colores.apagado, marginTop: 8, fontSize: 13, textTransform: "uppercase", letterSpacing: 1 },
+  avatar: {
+    width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center",
+    backgroundColor: "rgba(63,179,127,0.14)",
+  },
+  avatarTexto: { color: colores.verde, fontFamily: fuentes.monoFuerte, fontSize: 11 },
+  asistenciaNombre: { color: colores.texto, fontFamily: fuentes.textoMedio, fontSize: 16, flex: 1 },
+  asistenciaHora: { color: colores.apagado, fontFamily: fuentes.mono, fontSize: 13 },
+  vacio: { color: colores.tenue, fontFamily: fuentes.texto, paddingVertical: 6 },
+  noAsisten: {
+    color: colores.apagado, fontFamily: fuentes.monoFuerte, marginTop: 8, fontSize: 11,
+    textTransform: "uppercase", letterSpacing: 1,
+  },
 
   sinAlerta: {
-    alignItems: "center", paddingVertical: 48, paddingHorizontal: 20,
-    borderRadius: 14, borderWidth: 1, borderColor: colores.borde, backgroundColor: colores.panel,
+    alignItems: "center", paddingTop: 32, paddingBottom: 28, paddingHorizontal: 20,
+    borderRadius: 16, borderWidth: 1, borderColor: colores.borde, backgroundColor: colores.panel,
   },
-  sinAlertaTitulo: { color: "#cfc7c3", fontSize: 22, fontWeight: "800", letterSpacing: 3, textTransform: "uppercase" },
-  sinAlertaTexto: { color: colores.tenue, textAlign: "center", marginTop: 8 },
+  sinAlertaLogo: { width: 110, height: 110, marginBottom: 18, opacity: 0.9 },
+  sinAlertaTitulo: {
+    color: "#cfc7c3", fontFamily: fuentes.titulo, fontSize: 24, letterSpacing: 5, textTransform: "uppercase",
+  },
+  sinAlertaTexto: { color: colores.tenue, fontFamily: fuentes.texto, textAlign: "center", marginTop: 6 },
 
   seccion: {
-    color: colores.apagado, fontSize: 12, fontWeight: "700", letterSpacing: 1.5,
-    textTransform: "uppercase", marginTop: 28, marginBottom: 10,
+    color: colores.apagado, fontFamily: fuentes.monoFuerte, fontSize: 11, letterSpacing: 1.8,
+    textTransform: "uppercase", marginTop: 26, marginBottom: 10, marginLeft: 2,
+  },
+  lista: {
+    backgroundColor: colores.panel, borderWidth: 1, borderColor: colores.borde,
+    borderRadius: 14, overflow: "hidden",
   },
   opcion: {
-    backgroundColor: colores.panel, borderWidth: 1, borderColor: colores.borde,
-    borderRadius: 10, padding: 14, marginBottom: 8,
+    flexDirection: "row", alignItems: "center", gap: 12, padding: 14,
+    borderBottomWidth: 1, borderBottomColor: colores.borde,
+    marginBottom: -1, // la línea de la última opción queda tapada por el borde de la lista
   },
-  opcionTitulo: { color: colores.texto, fontSize: 16, fontWeight: "700" },
-  opcionDetalle: { color: colores.apagado, fontSize: 13, marginTop: 3 },
+  opcionIcono: { width: 36, height: 36, borderRadius: 9, alignItems: "center", justifyContent: "center" },
+  opcionTitulo: { color: colores.texto, fontFamily: fuentes.textoMedio, fontSize: 16 },
+  opcionDetalle: { color: colores.apagado, fontFamily: fuentes.texto, fontSize: 13, marginTop: 2 },
 });

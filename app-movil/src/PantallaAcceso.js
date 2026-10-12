@@ -1,10 +1,11 @@
 import { useState } from "react";
 import {
-  View, Text, TextInput, Pressable, Image, StyleSheet,
+  View, Text, TextInput, Pressable, StyleSheet,
   KeyboardAvoidingView, ScrollView, Platform, Alert, ActivityIndicator,
 } from "react-native";
 import { pedir, MODO_PRUEBA, servidorActual, cambiarServidor } from "./api";
-import { colores } from "./tema";
+import { colores, fuentes } from "./tema";
+import { Marca } from "./componentes";
 
 function Campo({ etiqueta, ...props }) {
   return (
@@ -89,9 +90,15 @@ export default function PantallaAcceso({ alIngresar }) {
   return (
     <KeyboardAvoidingView style={estilos.fondo} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={estilos.contenido} keyboardShouldPersistTaps="handled">
-        <Image source={require("../assets/logo.png")} style={estilos.logo} />
-        <Text style={estilos.sobretitulo}>Bomberos Voluntarios de Colón</Text>
+        <View style={estilos.encabezado}>
+          <Marca titulo="Bomberos Voluntarios" subtitulo="Colón · Buenos Aires" tamano={46} />
+        </View>
         <Text style={estilos.titulo}>{esLogin ? "Ingresar" : "Solicitar acceso"}</Text>
+        <Text style={estilos.bajada}>
+          {esLogin
+            ? "Ingresá con tu mail y contraseña."
+            : "Un administrador del cuartel aprueba cada solicitud."}
+        </Text>
 
         {MODO_PRUEBA && (
           <View style={estilos.prueba}>
@@ -168,35 +175,35 @@ export default function PantallaAcceso({ alIngresar }) {
 
 const estilos = StyleSheet.create({
   fondo: { flex: 1, backgroundColor: colores.fondo },
-  contenido: { padding: 24, paddingTop: 64, paddingBottom: 48 },
-  logo: { width: 96, height: 96, alignSelf: "center", marginBottom: 16 },
-  sobretitulo: {
-    color: colores.rojo, textAlign: "center", fontWeight: "700",
-    letterSpacing: 2, textTransform: "uppercase", fontSize: 12,
-  },
+  contenido: { padding: 24, paddingTop: 56, paddingBottom: 48 },
+  encabezado: { flexDirection: "row", marginBottom: 36 },
   titulo: {
-    color: colores.texto, textAlign: "center", fontSize: 30, fontWeight: "800",
-    textTransform: "uppercase", marginTop: 6, marginBottom: 24,
+    color: colores.texto, fontFamily: fuentes.tituloFuerte, fontSize: 40, lineHeight: 42,
+    textTransform: "uppercase",
   },
+  bajada: { color: colores.apagado, fontFamily: fuentes.texto, fontSize: 15, marginTop: 4, marginBottom: 24 },
   campo: { marginBottom: 14 },
   prueba: {
     borderWidth: 1, borderColor: colores.ambar, borderRadius: 10,
     padding: 12, paddingBottom: 0, marginBottom: 18,
   },
-  pruebaTitulo: { color: colores.ambar, fontWeight: "700", marginBottom: 10 },
+  pruebaTitulo: { color: colores.ambar, fontFamily: fuentes.textoFuerte, marginBottom: 10 },
   etiqueta: {
-    color: colores.apagado, fontSize: 12, fontWeight: "600",
-    letterSpacing: 1, textTransform: "uppercase", marginBottom: 6,
+    color: colores.apagado, fontFamily: fuentes.monoFuerte, fontSize: 11,
+    letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6,
   },
   input: {
     backgroundColor: colores.elevado, borderColor: colores.bordeFuerte, borderWidth: 1,
-    borderRadius: 10, color: colores.texto, fontSize: 16, paddingHorizontal: 14, paddingVertical: 12,
+    borderRadius: 10, color: colores.texto, fontFamily: fuentes.texto, fontSize: 16,
+    paddingHorizontal: 14, paddingVertical: 12,
   },
   boton: {
     backgroundColor: colores.rojo, borderRadius: 10, paddingVertical: 16,
     alignItems: "center", marginTop: 8,
   },
-  botonTexto: { color: "#fff", fontSize: 17, fontWeight: "800", letterSpacing: 1, textTransform: "uppercase" },
+  botonTexto: {
+    color: "#fff", fontFamily: fuentes.titulo, fontSize: 19, letterSpacing: 2.5, textTransform: "uppercase",
+  },
   enlace: { paddingVertical: 12, alignItems: "center" },
-  enlaceTexto: { color: colores.apagado, fontSize: 15 },
+  enlaceTexto: { color: colores.apagado, fontFamily: fuentes.texto, fontSize: 15 },
 });

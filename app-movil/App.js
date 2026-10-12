@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import { useFonts } from "expo-font";
 import { leerSesion, guardarSesion, borrarSesion, pedir, cargarServidor } from "./src/api";
 import { crearCanales } from "./src/notificaciones";
 import PantallaAcceso from "./src/PantallaAcceso";
 import PantallaPrincipal from "./src/PantallaPrincipal";
-import { colores } from "./src/tema";
+import { colores, archivosFuentes } from "./src/tema";
 
 export default function App() {
   const [sesion, setSesion] = useState(undefined); // undefined = cargando, null = sin sesión
+  // Si las letras no cargan, la app sigue con las del sistema
+  const [fuentesListas, errorFuentes] = useFonts(archivosFuentes);
+  const cargando = sesion === undefined || (!fuentesListas && !errorFuentes);
 
   useEffect(() => {
     // Los canales se crean apenas abre la app: así una alerta que llega con la
@@ -38,7 +42,7 @@ export default function App() {
   return (
     <View style={estilos.fondo}>
       <StatusBar style="light" />
-      {sesion === undefined ? (
+      {cargando ? (
         <View style={estilos.centro}><ActivityIndicator color={colores.texto} /></View>
       ) : sesion ? (
         <PantallaPrincipal sesion={sesion} alSalir={salir} />
