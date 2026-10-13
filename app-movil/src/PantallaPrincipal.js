@@ -11,13 +11,13 @@ import { pedir, SesionVencida, MODO_PRUEBA, servidorActual, leerTokenPush, guard
 import {
   obtenerTokenPush, probarSonido, abrirAjustesNotificaciones, pedirSinAhorroBateria,
 } from "./notificaciones";
-import { esBotonDeRespuesta, procesarBoton } from "./botonesNotificacion";
+import { esBotonDeRespuesta, procesarBoton, avisarRecibida } from "./botonesNotificacion";
 import { colores, fuentes } from "./tema";
 import { Marca, Chip } from "./componentes";
 
 const REFRESCO_MS = 15000; // con una alerta activa y la app abierta
 
-export default function PantallaPrincipal({ sesion, alSalir }) {
+export default function PantallaPrincipal({ sesion, alSalir, alRenovar }) {
   const [estado, setEstado] = useState(null); // { alerta, asistencia, miRespuesta }
   const [cargando, setCargando] = useState(false);
   const [enviando, setEnviando] = useState(null);
@@ -86,6 +86,15 @@ export default function PantallaPrincipal({ sesion, alSalir }) {
     }
   }, [enviarToken]);
 
+  // Al abrir: renovar la sesión, así no vence mientras se use la app (y los botones
+  // de la notificación siguen funcionando). El servidor solo renueva una vez por día.
+  useEffect(() => {
+    pedir("/app/renovar", { metodo: "POST", token: sesion.token })
+      .then((data) => { if (data.token) alRenovar(data.token); })
+      .catch((e) => { if (e instanceof SesionVencida) manejarError(e); });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sesion.token]);
+
   // Al abrir: registrar el celular y traer el estado
   useEffect(() => {
     registrarCelular();
@@ -96,7 +105,11 @@ export default function PantallaPrincipal({ sesion, alSalir }) {
       if (data && data !== tokenPush.current) enviarToken(data, Platform.OS);
     });
     // Llega una alerta con la app abierta, o se toca una notificación
-    const subRecibida = Notifications.addNotificationReceivedListener(() => actualizar());
+    const subRecibida = Notifications.addNotificationReceivedListener((notificacion) => {
+      // Con la app abierta también se avisa que llegó (en segundo plano lo hace la tarea)
+      avisarRecibida(notificacion.request.content.data);
+      actualizar();
+    });
     const subRespuesta = Notifications.addNotificationResponseReceivedListener(async (respuesta) => {
       // Botón Asisto / No asisto con la app abierta. Con la app en segundo plano
       // lo resuelve la tarea de botonesNotificacion.js, así no se manda dos veces.
@@ -461,6 +474,16 @@ function Asistencia({ asistencia }) {
       {asistencia.noAsisten.length > 0 && (
         <Text style={estilos.noAsisten}>No asisten: {asistencia.noAsisten.length}</Text>
       )}
+      {asistencia.recepcion && asistencia.recepcion.destinatarios > 0 && (
+        <Text
+          style={[
+            estilos.recepcion,
+            asistencia.recepcion.recibieron === asistencia.recepcion.destinatarios && { color: colores.verde },
+          ]}
+        >
+          Llegó a {asistencia.recepcion.recibieron} de {asistencia.recepcion.destinatarios} celulares
+        </Text>
+      )}
     </View>
   );
 }
@@ -567,6 +590,10 @@ const estilos = StyleSheet.create({
   vacio: { color: colores.tenue, fontFamily: fuentes.texto, paddingVertical: 6 },
   noAsisten: {
     color: colores.apagado, fontFamily: fuentes.monoFuerte, marginTop: 8, fontSize: 11,
+    textTransform: "uppercase", letterSpacing: 1,
+  },
+  recepcion: {
+    color: colores.ambar, fontFamily: fuentes.monoFuerte, marginTop: 8, fontSize: 11,
     textTransform: "uppercase", letterSpacing: 1,
   },
 

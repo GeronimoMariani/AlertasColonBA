@@ -26,6 +26,13 @@ export default function App() {
     setSesion(nueva);
   }
 
+  // El servidor entregó una sesión renovada: se guarda para que la app no pida login nunca
+  async function renovar(token) {
+    const nueva = { ...sesion, token };
+    await guardarSesion(nueva);
+    setSesion(nueva);
+  }
+
   // tokenPush: si se pasa, se da de baja ese celular en el servidor antes de salir
   async function salir(tokenPush) {
     if (tokenPush && sesion) {
@@ -45,7 +52,7 @@ export default function App() {
       {cargando ? (
         <View style={estilos.centro}><ActivityIndicator color={colores.texto} /></View>
       ) : sesion ? (
-        <PantallaPrincipal sesion={sesion} alSalir={salir} />
+        <PantallaPrincipal sesion={sesion} alSalir={salir} alRenovar={renovar} />
       ) : (
         <PantallaAcceso alIngresar={ingresar} />
       )}

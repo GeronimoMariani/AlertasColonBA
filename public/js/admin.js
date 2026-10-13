@@ -98,6 +98,35 @@ async function cargarUsuarios() {
   }
 }
 
+// "hoy 14:05", "ayer 09:30", "hace 5 días"
+function cuando(iso) {
+  const fecha = new Date(iso);
+  if (isNaN(fecha)) return "—";
+  const hora = fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "America/Argentina/Buenos_Aires" });
+  const dia = d => d.toLocaleDateString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" });
+  const hoy = new Date();
+  const ayer = new Date(hoy.getTime() - 864e5);
+  if (dia(fecha) === dia(hoy)) return `hoy ${hora}`;
+  if (dia(fecha) === dia(ayer)) return `ayer ${hora}`;
+  return `hace ${Math.max(2, Math.round((hoy - fecha) / 864e5))} días`;
+}
+
+const DIAS_SIN_ABRIR_AVISO = 14;
+
+// Estado de la app del celular de un usuario aprobado
+function estadoApp(app) {
+  if (!app) {
+    return `<span class="estado-app aviso">Sin la app del celular</span>`;
+  }
+  const plataformas = app.plataformas.map(p => (p === "ios" ? "iPhone" : "Android")).join(" y ");
+  const diasSinAbrir = app.ultimaApertura ? (Date.now() - new Date(app.ultimaApertura)) / 864e5 : Infinity;
+  const recepcion = app.ultimaRecepcion
+    ? `última alerta recibida ${cuando(app.ultimaRecepcion)}`
+    : "todavía no confirmó ninguna alerta";
+  const tono = diasSinAbrir > DIAS_SIN_ABRIR_AVISO ? "aviso" : "ok";
+  return `<span class="estado-app ${tono}">App ${escapeHtml(plataformas)} · abierta ${cuando(app.ultimaApertura)} · ${recepcion}</span>`;
+}
+
 function renderSeccion(containerId, usuarios, acciones) {
   const contenedor = document.getElementById(containerId);
   document.getElementById(`${containerId}Count`).textContent = usuarios.length;
@@ -119,6 +148,7 @@ function renderSeccion(containerId, usuarios, acciones) {
       <div>
         <span class="nombre">${escapeHtml(u.nombre)} ${escapeHtml(u.apellido)}${ROLES[u.rol] ? ` <span class="chip ${u.rol === "admin" ? "chip-steel" : ""}">${ROLES[u.rol]}</span>` : ""}</span>
         <span class="correo">${escapeHtml(u.usuario)}</span>
+        ${acciones.includes("cambiarRol") ? estadoApp(u.app) : ""}
       </div>
       <div class="acciones">
         ${acciones.includes("aprobar") ? `<button class="btn-aprobar" data-accion="gestionar" data-usuario="${id}" data-estado="aprobado">Aprobar</button>` : ""}

@@ -246,6 +246,28 @@ main {
   color: var(--muted);
 }
 
+/* Llegada de la alerta a los celulares */
+.asist-recepcion {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #1b1818;
+  font: 600 0.8rem var(--f-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.asist-recepcion.completa {
+  color: var(--green);
+}
+
+.asist-sin {
+  margin-top: 6px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
 /* --- Sin alertas --- */
 #noAlertContainer {
   flex: 1;

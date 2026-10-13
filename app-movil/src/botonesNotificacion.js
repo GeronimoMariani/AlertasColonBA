@@ -1,4 +1,4 @@
-// Botones ASISTO / NO ASISTO en la notificación de alerta.
+// Botones ASISTO / NO ASISTO en la notificación de alerta, y aviso de que la alerta llegó.
 // Funcionan con el celular bloqueado y sin abrir la app: Android corre esta tarea
 // en segundo plano, que manda la respuesta al servidor y avisa si quedó registrada.
 import * as TaskManager from "expo-task-manager";
@@ -65,11 +65,38 @@ export async function procesarBoton(respuesta) {
   }
 }
 
+// Avisa al servidor que la alerta llegó a este celular, para el "Llegó a X de Y".
+// No muestra nada: si falla, el bombero igual puede responder y eso también cuenta.
+export async function avisarRecibida(datos) {
+  if (!datos || !datos.alertaId || datos.prueba || datos.confirmacion) return;
+  try {
+    await cargarServidor();
+    const sesion = await leerSesion();
+    if (!sesion) return;
+    await pedir("/app/recibida", { metodo: "POST", token: sesion.token, cuerpo: { alertaId: datos.alertaId } });
+  } catch (e) {
+    // sin señal en ese momento: no se reintenta
+  }
+}
+
+// Mensaje recibido (no un botón): los datos vienen como objeto o dentro de dataString
+function datosDeMensaje(mensaje) {
+  const datos = mensaje?.data || {};
+  if (datos.alertaId) return datos;
+  try {
+    return datos.dataString ? JSON.parse(datos.dataString) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
 // Tiene que definirse apenas carga el código de la app (se importa desde index.js),
-// porque Android la ejecuta aunque la app esté cerrada.
+// porque Android la ejecuta aunque la app esté cerrada: al tocar un botón y al llegar cada alerta.
 TaskManager.defineTask(TAREA_NOTIFICACIONES, async ({ data }) => {
   if (data && "actionIdentifier" in data) {
     await procesarBoton(data);
+  } else if (data) {
+    await avisarRecibida(datosDeMensaje(data));
   }
   return Notifications.BackgroundNotificationTaskResult.NoData;
 });

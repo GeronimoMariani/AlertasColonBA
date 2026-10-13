@@ -327,10 +327,40 @@ app.post("/login-usuario", loginLimiter, async (req, res) => {
   }
 });
 
+// Para el panel de admin: quién tiene la app, cuándo la abrió y cuándo le llegó la última alerta.
+// usuario → { plataformas, ultimaApertura, ultimaRecepcion }. Si falla, el panel sigue sin estos datos.
+async function estadoAppPorUsuario() {
+  const porUsuario = new Map();
+  try {
+    const [dispositivos, estados] = await Promise.all([
+      coleccion("dispositivos").get(),
+      coleccion("estado_app").get(),
+    ]);
+    dispositivos.docs.forEach(doc => {
+      const d = doc.data();
+      const actual = porUsuario.get(d.usuario) || { plataformas: [], ultimaApertura: null, ultimaRecepcion: null };
+      if (!actual.plataformas.includes(d.plataforma)) actual.plataformas.push(d.plataforma);
+      if (!actual.ultimaApertura || d.actualizado > actual.ultimaApertura) actual.ultimaApertura = d.actualizado;
+      porUsuario.set(d.usuario, actual);
+    });
+    estados.docs.forEach(doc => {
+      const actual = porUsuario.get(doc.id);
+      // Sin celular registrado no se muestra la recepción (ya desinstaló o cerró sesión)
+      if (actual) actual.ultimaRecepcion = doc.data().ultimaRecepcion || null;
+    });
+  } catch (e) {
+    console.error("⚠️ No se pudo leer el estado de la app de los usuarios:", e);
+  }
+  return porUsuario;
+}
+
 app.get("/listar-usuarios", autenticar, requiereAdmin, async (req, res) => {
   try {
     const snapshot = await db.collection("usuarios").get();
-    const usuarios = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), password: "***" }));
+    const appPorUsuario = await estadoAppPorUsuario();
+    const usuarios = snapshot.docs.map(doc => ({
+      id: doc.id, ...doc.data(), password: "***", app: appPorUsuario.get(doc.id) || null,
+    }));
     res.json(usuarios);
   } catch (e) {
     res.status(500).json({ error: "Error al listar usuarios" });
@@ -478,6 +508,10 @@ const PUSH_VIGENCIA_MS = 30 * 60 * 1000; // igual que la duración de la alerta 
 // Por ahora solo en modo prueba; en producción se activa con PUSH_BOTONES=true.
 const PUSH_BOTONES = MODO_PRUEBA || process.env.PUSH_BOTONES === "true";
 const PUSH_CATEGORIA = "alerta";
+// Recordatorio: una sola vez, a quienes todavía no respondieron Asisto / No asisto.
+// Por ahora solo en modo prueba; en producción se activa con PUSH_RECORDATORIO=true.
+const PUSH_RECORDATORIO = MODO_PRUEBA || process.env.PUSH_RECORDATORIO === "true";
+const RECORDATORIO_MS = (Number(process.env.PUSH_RECORDATORIO_MIN) || 3) * 60 * 1000;
 
 // Errores de FCM que indican que el token ya no sirve (app desinstalada, etc.)
 const TOKENS_INVALIDOS = [
@@ -489,10 +523,11 @@ function idDispositivo(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
-function mensajePush(token, alerta, actualizada) {
-  const titulo = actualizada
-    ? `✏️ ALERTA ACTUALIZADA: ${alerta.tipo.toUpperCase()}`
-    : `🚨 ${alerta.tipo.toUpperCase()}`;
+function mensajePush(token, alerta, actualizada, recordatorio = false) {
+  let titulo = `🚨 ${alerta.tipo.toUpperCase()}`;
+  if (actualizada) titulo = `✏️ ALERTA ACTUALIZADA: ${alerta.tipo.toUpperCase()}`;
+  else if (recordatorio) titulo = `🔁 RECORDATORIO: ${alerta.tipo.toUpperCase()}`;
+  const evento = actualizada ? "actualizada" : recordatorio ? "recordatorio" : "nueva";
   const cuerpo = alerta.descripcion ? `${alerta.direccion} — ${alerta.descripcion}` : alerta.direccion;
 
   let sonidoIos = actualizada ? "default" : `${PUSH_SONIDO}.wav`;
@@ -525,7 +560,7 @@ function mensajePush(token, alerta, actualizada) {
       data: {
         title: titulo,
         message: cuerpo,
-        body: JSON.stringify({ alertaId: alerta.id, evento: actualizada ? "actualizada" : "nueva" }),
+        body: JSON.stringify({ alertaId: alerta.id, evento }),
         channelId: actualizada ? PUSH_CANAL_ACTUALIZACIONES : PUSH_CANAL_ALERTAS,
         categoryId: PUSH_CATEGORIA,
         tag: alerta.id, // la actualización reemplaza a la notificación original
@@ -539,7 +574,7 @@ function mensajePush(token, alerta, actualizada) {
   return {
     token,
     notification: { title: titulo, body: cuerpo },
-    data: { alertaId: alerta.id, evento: actualizada ? "actualizada" : "nueva" },
+    data: { alertaId: alerta.id, evento },
     android: {
       priority: "high",
       ttl: PUSH_VIGENCIA_MS,
@@ -555,21 +590,31 @@ function mensajePush(token, alerta, actualizada) {
   };
 }
 
-// Manda la alerta a todos los celulares registrados de usuarios aprobados.
+// Manda la alerta a todos los celulares registrados de usuarios aprobados
+// (o solo a los de `soloUsuarios`, para el recordatorio).
 // Nunca tira error: un problema acá no puede frenar el resto del despacho.
-async function enviarPush(alerta, { actualizada = false } = {}) {
+async function enviarPush(alerta, { actualizada = false, recordatorio = false, soloUsuarios = null } = {}) {
   try {
     const snapshot = await coleccion("dispositivos").get();
     let dispositivos = snapshot.docs.map(doc => ({ ref: doc.ref, ...doc.data() }));
+    if (soloUsuarios) dispositivos = dispositivos.filter(d => soloUsuarios.has(d.usuario));
 
     // Se descartan los de usuarios eliminados o rechazados. Si esta consulta falla,
     // se manda igual a todos: es preferible de más que de menos en una emergencia.
+    const nombres = new Map(); // usuario → nombre, para mostrar quién no confirmó la llegada
     try {
       const aprobados = await db.collection("usuarios").where("estado", "==", "aprobado").get();
-      const habilitados = new Set(aprobados.docs.map(doc => doc.id));
-      dispositivos = dispositivos.filter(d => habilitados.has(d.usuario));
+      aprobados.docs.forEach(doc => nombres.set(doc.id, nombreDe(doc.data())));
+      dispositivos = dispositivos.filter(d => nombres.has(d.usuario));
     } catch (e) {
       console.error("⚠️ No se pudo filtrar usuarios aprobados, se envía a todos los dispositivos:", e);
+    }
+
+    // Alerta nueva: se anota a quiénes se les mandó, para contar a cuántos les llegó
+    if (!actualizada && !recordatorio && lastAlert && lastAlert.id === alerta.id) {
+      dispositivos.forEach(d => destinatarios.set(d.usuario, nombres.get(d.usuario) || d.usuario));
+      io.emit("asistencia", resumenAsistencia());
+      programarRecordatorio(alerta);
     }
 
     if (dispositivos.length === 0) {
@@ -578,7 +623,7 @@ async function enviarPush(alerta, { actualizada = false } = {}) {
     }
 
     const resultados = await Promise.allSettled(
-      dispositivos.map(d => admin.messaging().send(mensajePush(d.token, alerta, actualizada)))
+      dispositivos.map(d => admin.messaging().send(mensajePush(d.token, alerta, actualizada, recordatorio)))
     );
 
     let enviados = 0;
@@ -594,31 +639,86 @@ async function enviarPush(alerta, { actualizada = false } = {}) {
         console.error(`❌ Push fallido a ${dispositivos[i].usuario}:`, code || r.reason);
       }
     });
-    console.log(`✅ Push enviado a ${enviados}/${dispositivos.length} celulares`);
+    console.log(`✅ Push${recordatorio ? " (recordatorio)" : ""} enviado a ${enviados}/${dispositivos.length} celulares`);
   } catch (e) {
     console.error("❌ Error al enviar push:", e);
   }
 }
 
-// ─── Asistencia (Asisto / No asisto) de la alerta activa ────────────────────
+// A los RECORDATORIO_MS, una sola vez, vuelve a sonar en los celulares de quienes
+// recibieron la alerta y todavía no respondieron.
+function programarRecordatorio(alerta) {
+  if (!PUSH_RECORDATORIO) return;
+  if (recordatorioTimeout) clearTimeout(recordatorioTimeout);
+  recordatorioTimeout = setTimeout(() => {
+    recordatorioTimeout = null;
+    if (!lastAlert || lastAlert.id !== alerta.id) return;
+    const pendientes = [...destinatarios.keys()].filter(u => !respuestas.has(u));
+    if (pendientes.length === 0) return;
+    enviarPush(lastAlert, { recordatorio: true, soloUsuarios: new Set(pendientes) });
+  }, RECORDATORIO_MS);
+}
+
+// ─── Asistencia (Asisto / No asisto) y llegada de la alerta activa ─────────
 // usuario → { nombre, respuesta: "asisto" | "no_asisto", hora }
 let respuestas = new Map();
+// usuario → nombre: a quiénes se les mandó la alerta al celular
+let destinatarios = new Map();
+// usuario → hora: celulares que confirmaron que les llegó
+let recepciones = new Map();
+let recordatorioTimeout = null;
+
+function nombreDe(u) {
+  return `${u.nombre || ""} ${u.apellido || ""}`.trim() || u.usuario;
+}
+
+function horaAhora() {
+  return new Date().toLocaleTimeString("es-AR", {
+    hour: "2-digit", minute: "2-digit", hour12: false,
+    timeZone: "America/Argentina/Buenos_Aires",
+  });
+}
 
 function resumenAsistencia() {
   const lista = [...respuestas.values()];
+  // Responder también cuenta como que le llegó
+  const llego = u => recepciones.has(u) || respuestas.has(u);
+  const usuarios = [...destinatarios.keys()];
   return {
     alertaId: lastAlert ? lastAlert.id : null,
     asisten: lista.filter(r => r.respuesta === "asisto").map(({ nombre, hora }) => ({ nombre, hora })),
     noAsisten: lista.filter(r => r.respuesta === "no_asisto").map(({ nombre, hora }) => ({ nombre, hora })),
+    recepcion: {
+      destinatarios: usuarios.length,
+      recibieron: usuarios.filter(llego).length,
+      sinConfirmar: usuarios.filter(u => !llego(u)).map(u => destinatarios.get(u)),
+    },
   };
+}
+
+function reiniciarSeguimiento() {
+  respuestas = new Map();
+  destinatarios = new Map();
+  recepciones = new Map();
+  if (recordatorioTimeout) clearTimeout(recordatorioTimeout);
+  recordatorioTimeout = null;
 }
 
 function limpiarAlertaActiva() {
   lastAlert = null;
-  respuestas = new Map();
+  reiniciarSeguimiento();
   if (alertTimeout) clearTimeout(alertTimeout);
   alertTimeout = null;
   io.emit("clearAlert");
+}
+
+// Última vez que el celular de cada usuario confirmó que le llegó una alerta (panel de admin)
+function anotarRecepcion(usuario, alertaId) {
+  coleccion("estado_app").doc(usuario).set({ ultimaRecepcion: new Date().toISOString() }, { merge: true })
+    .catch(e => console.error("❌ Error al guardar estado de la app:", e));
+  coleccion("alertas").doc(alertaId).collection("recepciones").doc(usuario)
+    .set({ usuario, timestamp: new Date().toISOString() })
+    .catch(e => console.error("❌ Error al guardar recepción:", e));
 }
 
 // Contador de visores conectados
@@ -688,7 +788,7 @@ io.on("connection", async (socket) => {
       });
 
       lastAlert = { id: crypto.randomUUID(), ...limpio, enviadoPor: socket.usuario.usuario, timestamp };
-      respuestas = new Map();
+      reiniciarSeguimiento();
       await guardarAlertaFirebase(lastAlert);
       enviarTelegram(lastAlert);
       enviarPush(lastAlert);
@@ -785,6 +885,36 @@ app.post("/app/dispositivo/baja", autenticarApp, async (req, res) => {
   }
 });
 
+// El celular avisa que le llegó la alerta (aunque el bombero todavía no la haya visto)
+app.post("/app/recibida", autenticarApp, (req, res) => {
+  const { alertaId } = req.body;
+  // Una alerta vieja o ya terminada no es un error para el celular: se ignora
+  if (!lastAlert || alertaId !== lastAlert.id) return res.json({ success: true, activa: false });
+
+  const usuario = req.usuario.usuario;
+  if (!recepciones.has(usuario)) {
+    recepciones.set(usuario, horaAhora());
+    anotarRecepcion(usuario, alertaId);
+    io.emit("asistencia", resumenAsistencia());
+  }
+  res.json({ success: true, activa: true });
+});
+
+// Renueva la sesión de la app (se llama al abrirla): mientras se use, nunca vence.
+// Solo entrega un token nuevo si el actual tiene más de un día, para no renovar de más.
+const RENOVAR_DESPUES_DE_S = 24 * 60 * 60;
+app.post("/app/renovar", autenticarApp, (req, res) => {
+  const edad = Math.floor(Date.now() / 1000) - (req.usuario.iat || 0);
+  if (edad < RENOVAR_DESPUES_DE_S) return res.json({ success: true, token: null });
+
+  const token = jwt.sign(
+    { usuario: req.usuario.usuario, rol: req.usuarioActivo.rol, scope: APP_TOKEN_SCOPE },
+    JWT_SECRET,
+    { expiresIn: APP_TOKEN_DURACION }
+  );
+  res.json({ success: true, token });
+});
+
 app.get("/app/estado", autenticarApp, (req, res) => {
   const mia = respuestas.get(req.usuario.usuario);
   res.json({
@@ -804,16 +934,13 @@ app.post("/app/responder", autenticarApp, async (req, res) => {
     return res.status(409).json({ success: false, message: "Esa alerta ya no está activa" });
   }
 
-  const u = req.usuarioActivo;
-  const registro = {
-    nombre: `${u.nombre || ""} ${u.apellido || ""}`.trim() || u.usuario,
-    respuesta,
-    hora: new Date().toLocaleTimeString("es-AR", {
-      hour: "2-digit", minute: "2-digit", hour12: false,
-      timeZone: "America/Argentina/Buenos_Aires",
-    }),
-  };
+  const registro = { nombre: nombreDe(req.usuarioActivo), respuesta, hora: horaAhora() };
   respuestas.set(req.usuario.usuario, registro);
+  // Si respondió, le llegó (por si su celular no llegó a avisar la recepción)
+  if (!recepciones.has(req.usuario.usuario)) {
+    recepciones.set(req.usuario.usuario, registro.hora);
+    anotarRecepcion(req.usuario.usuario, alertaId);
+  }
   io.emit("asistencia", resumenAsistencia());
 
   try {

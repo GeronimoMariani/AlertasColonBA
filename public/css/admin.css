@@ -80,6 +80,37 @@ section h2 .n {
   white-space: nowrap;
 }
 
+/* Estado de la app del celular (solo usuarios aprobados) */
+.estado-app {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.estado-app::before {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--faint);
+}
+
+.estado-app.ok::before {
+  background: var(--green);
+}
+
+.estado-app.aviso {
+  color: var(--amber);
+}
+
+.estado-app.aviso::before {
+  background: var(--amber);
+}
+
 .usuario-card .chip {
   padding: 3px 8px;
 }

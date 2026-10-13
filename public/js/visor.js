@@ -73,6 +73,21 @@ function renderAsistencia() {
         : `<li class="vacio">Esperando respuestas…</li>`}
     </ul>
     ${noAsisten.length ? `<div class="asist-no">No asisten: ${noAsisten.length}</div>` : ""}
+    ${renderRecepcion(asistencia && asistencia.recepcion)}
+  `;
+}
+
+// "Llegó a 34 de 38 celulares": cuántos celulares confirmaron que les llegó la alerta
+function renderRecepcion(recepcion) {
+  if (!recepcion || !recepcion.destinatarios) return "";
+  const completa = recepcion.recibieron === recepcion.destinatarios;
+  return `
+    <div class="asist-recepcion ${completa ? "completa" : ""}">
+      Llegó a ${recepcion.recibieron} de ${recepcion.destinatarios} celulares
+    </div>
+    ${recepcion.sinConfirmar.length
+      ? `<div class="asist-sin">Sin confirmar: ${recepcion.sinConfirmar.map(escapeHtml).join(", ")}</div>`
+      : ""}
   `;
 }
 
