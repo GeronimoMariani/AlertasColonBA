@@ -614,7 +614,11 @@ async function enviarPush(alerta, { actualizada = false, recordatorio = false, s
     if (!actualizada && !recordatorio && lastAlert && lastAlert.id === alerta.id) {
       dispositivos.forEach(d => destinatarios.set(d.usuario, nombres.get(d.usuario) || d.usuario));
       io.emit("asistencia", resumenAsistencia());
-      programarRecordatorio(alerta);
+      programarRecordatorio(alerta, RECORDATORIO_MS);
+      // Se guarda para poder recuperar el "Llegó a X de Y" si el servidor se reinicia
+      const lista = [...destinatarios].map(([usuario, nombre]) => ({ usuario, nombre }));
+      coleccion("alertas").doc(alerta.id).update({ destinatarios: lista })
+        .catch(e => console.error("❌ Error al guardar destinatarios:", e));
     }
 
     if (dispositivos.length === 0) {
@@ -647,7 +651,7 @@ async function enviarPush(alerta, { actualizada = false, recordatorio = false, s
 
 // A los RECORDATORIO_MS, una sola vez, vuelve a sonar en los celulares de quienes
 // recibieron la alerta y todavía no respondieron.
-function programarRecordatorio(alerta) {
+function programarRecordatorio(alerta, demoraMs) {
   if (!PUSH_RECORDATORIO) return;
   if (recordatorioTimeout) clearTimeout(recordatorioTimeout);
   recordatorioTimeout = setTimeout(() => {
@@ -656,7 +660,10 @@ function programarRecordatorio(alerta) {
     const pendientes = [...destinatarios.keys()].filter(u => !respuestas.has(u));
     if (pendientes.length === 0) return;
     enviarPush(lastAlert, { recordatorio: true, soloUsuarios: new Set(pendientes) });
-  }, RECORDATORIO_MS);
+    // Anotado, para no repetirlo si el servidor se reinicia
+    coleccion("alertas").doc(alerta.id).update({ recordatorioEnviado: true })
+      .catch(e => console.error("❌ Error al anotar el recordatorio:", e));
+  }, demoraMs);
 }
 
 // ─── Asistencia (Asisto / No asisto) y llegada de la alerta activa ─────────
@@ -705,6 +712,11 @@ function reiniciarSeguimiento() {
 }
 
 function limpiarAlertaActiva() {
+  // Anotada como terminada, así no se recupera si el servidor se reinicia
+  if (lastAlert) {
+    coleccion("alertas").doc(lastAlert.id).update({ finalizada: true })
+      .catch(e => console.error("❌ Error al marcar la alerta como finalizada:", e));
+  }
   lastAlert = null;
   reiniciarSeguimiento();
   if (alertTimeout) clearTimeout(alertTimeout);
@@ -719,6 +731,58 @@ function anotarRecepcion(usuario, alertaId) {
   coleccion("alertas").doc(alertaId).collection("recepciones").doc(usuario)
     .set({ usuario, timestamp: new Date().toISOString() })
     .catch(e => console.error("❌ Error al guardar recepción:", e));
+}
+
+const DURACION_ALERTA_MS = 30 * 60 * 1000;
+
+// "13/10/2026, 14:05" en hora de Argentina (como se muestra en el visor y la app)
+function fechaHora(fecha) {
+  return fecha.toLocaleString("es-AR", {
+    hour: "2-digit", minute: "2-digit",
+    day: "2-digit", month: "2-digit", year: "numeric",
+    timeZone: "America/Argentina/Buenos_Aires",
+  });
+}
+
+// Al arrancar: si el servidor se reinició en medio de una salida (un deploy, un
+// mantenimiento de Render), recupera de Firebase la alerta activa, quién responde,
+// a quién le llegó, y vuelve a programar el fin de la alerta y el recordatorio.
+async function restaurarAlertaActiva() {
+  const snapshot = await coleccion("alertas").orderBy("timestamp", "desc").limit(1).get();
+  if (snapshot.empty) return;
+  const doc = snapshot.docs[0];
+  const datos = doc.data();
+  const enviada = Date.parse(datos.timestamp);
+  const edad = Date.now() - enviada;
+  if (datos.finalizada || !(edad >= 0 && edad < DURACION_ALERTA_MS)) return;
+
+  const [resps, recs] = await Promise.all([
+    doc.ref.collection("respuestas").get(),
+    doc.ref.collection("recepciones").get(),
+  ]);
+
+  const { destinatarios: guardados, finalizada, recordatorioEnviado, timestamp, ...campos } = datos;
+  lastAlert = { ...campos, id: datos.id || doc.id, timestamp: fechaHora(new Date(enviada)) };
+  reiniciarSeguimiento();
+  (guardados || []).forEach(d => destinatarios.set(d.usuario, d.nombre));
+  resps.docs.forEach(r => {
+    const { usuario, nombre, respuesta, hora } = r.data();
+    respuestas.set(usuario || r.id, { nombre, respuesta, hora });
+  });
+  recs.docs.forEach(r => {
+    const { usuario, timestamp: cuando } = r.data();
+    recepciones.set(usuario || r.id, new Date(cuando).toLocaleTimeString("es-AR", {
+      hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "America/Argentina/Buenos_Aires",
+    }));
+  });
+
+  if (alertTimeout) clearTimeout(alertTimeout);
+  alertTimeout = setTimeout(limpiarAlertaActiva, DURACION_ALERTA_MS - edad);
+  // El recordatorio sale a su hora, o enseguida si esa hora pasó mientras el servidor estaba caído
+  if (!recordatorioEnviado) programarRecordatorio(lastAlert, Math.max(RECORDATORIO_MS - edad, 5000));
+
+  console.log(`♻️ Alerta activa recuperada (${lastAlert.tipo}, ${Math.round(edad / 60000)} min): ` +
+    `${respuestas.size} respuestas, ${recepciones.size} recepciones`);
 }
 
 // Contador de visores conectados
@@ -780,13 +844,7 @@ io.on("connection", async (socket) => {
         return responder({ ok: false, code: "INVALID", message: "Faltan el tipo o la dirección" });
       }
 
-      const now = new Date();
-      const timestamp = now.toLocaleString("es-AR", {
-        hour: "2-digit", minute: "2-digit",
-        day: "2-digit", month: "2-digit", year: "numeric",
-        timeZone: "America/Argentina/Buenos_Aires",
-      });
-
+      const timestamp = fechaHora(new Date());
       lastAlert = { id: crypto.randomUUID(), ...limpio, enviadoPor: socket.usuario.usuario, timestamp };
       reiniciarSeguimiento();
       await guardarAlertaFirebase(lastAlert);
@@ -797,7 +855,7 @@ io.on("connection", async (socket) => {
       responder({ ok: true });
 
       if (alertTimeout) clearTimeout(alertTimeout);
-      alertTimeout = setTimeout(limpiarAlertaActiva, 30 * 60 * 1000);
+      alertTimeout = setTimeout(limpiarAlertaActiva, DURACION_ALERTA_MS);
     } catch (e) {
       console.error("❌ Error al enviar alerta:", e);
       return responder({ ok: false, code: "ERROR", message: "Error del servidor al enviar la alerta" });
@@ -1025,4 +1083,11 @@ app.post("/reset-password", resetLimiter, async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
+// Primero se recupera la alerta activa (si la había), así el primer visor o celular que
+// se reconecta ya la recibe. Si Firebase no responde en 10 s, se arranca igual.
+Promise.race([
+  restaurarAlertaActiva(),
+  new Promise((_, rechazar) => setTimeout(() => rechazar(new Error("Firebase no respondió en 10 s")), 10000)),
+])
+  .catch(e => console.error("⚠️ No se pudo recuperar la alerta activa:", e.message || e))
+  .finally(() => server.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`)));
